@@ -24,6 +24,17 @@ jobs:
           java-version: "17"
       - run: ./gradlew build
         working-directory: example
+  build-ios-example-flutter-plugin-example-app:
+    name: Build example iOS app for the Flutter plugin of the example KMP project
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+      - run: ./gradlew :generateDummyFramework
+        working-directory: example
+      - run: flutter build ios --no-codesign
+        working-directory: example/flutter/example
   build-android-example-flutter-plugin-example-app:
     name: Build example Android app for the Flutter plugin of the example KMP project
     runs-on: ubuntu-latest

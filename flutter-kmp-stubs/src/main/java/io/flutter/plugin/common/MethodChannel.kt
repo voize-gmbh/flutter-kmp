@@ -1,6 +1,6 @@
 package io.flutter.plugin.common
 
-class MethodChannel(
+open class MethodChannel(
     messenger: BinaryMessenger,
     name: String,
 ) {

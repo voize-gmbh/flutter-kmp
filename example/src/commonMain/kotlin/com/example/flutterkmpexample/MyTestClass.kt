@@ -5,6 +5,8 @@ import de.voize.flutterkmp.annotation.FlutterMethod
 import de.voize.flutterkmp.annotation.FlutterModule
 import de.voize.flutterkmp.annotation.FlutterStateFlow
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -19,6 +21,8 @@ import kotlinx.serialization.Serializable
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.serialization.SerialName
 import kotlin.time.Duration
+
+val SharedCoroutineScope = CoroutineScope(Dispatchers.Default)
 
 @Serializable
 data class MyDataClass(

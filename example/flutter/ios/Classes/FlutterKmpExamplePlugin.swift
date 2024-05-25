@@ -1,18 +1,28 @@
 import Flutter
 import UIKit
+import flutterkmpexample
+
 
 public class FlutterKmpExamplePlugin: NSObject, FlutterPlugin {
+  let myTestClass: MyTestClassIOS
+    
+  init(myTestClass: MyTestClassIOS) {
+    self.myTestClass = myTestClass
+  }
+    
   public static func register(with registrar: FlutterPluginRegistrar) {
-    let channel = FlutterMethodChannel(name: "flutter_kmp_example", binaryMessenger: registrar.messenger())
-    let instance = FlutterKmpExamplePlugin()
-    registrar.addMethodCallDelegate(instance, channel: channel)
+    let myTestClass = MyTestClassIOS(coroutineScope: MyTestClassKt.SharedCoroutineScope)
+    let instance = FlutterKmpExamplePlugin(myTestClass: myTestClass)
+
+    myTestClass.register(
+      registrar: registrar,
+      pluginInstance: instance
+    )
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-    switch call.method {
-    case "getPlatformVersion":
-      result("iOS " + UIDevice.current.systemVersion)
-    default:
+    let wasHandled = self.myTestClass.handleMethodCall(call: call, result: result)
+    if (!wasHandled) {
       result(FlutterMethodNotImplemented)
     }
   }

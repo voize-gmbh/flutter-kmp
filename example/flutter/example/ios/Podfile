@@ -25,6 +25,10 @@ end
 
 require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
 
+# References the local FlutterKmpExample KMP project podspec.
+# In a normal setup this is not needed, because the podspec should be published to a Cocoapods repository.
+pod 'FlutterKmpExample', :path => '../../../FlutterKmpExample.podspec'
+
 flutter_ios_podfile_setup
 
 target 'Runner' do

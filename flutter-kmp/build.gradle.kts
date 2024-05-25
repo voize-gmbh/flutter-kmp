@@ -1,6 +1,7 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
+    kotlin("native.cocoapods")
     id("com.android.library")
 }
 
@@ -28,12 +29,23 @@ kotlin {
         }
         publishLibraryVariants("release")
     }
+
+    cocoapods {
+        // this cocoapods dependency is needed for the iOS EventStreamHandler utils
+        pod("Flutter")
+        
+        // we do not need to create a podspec file because the KMP projects that use this library 
+        // must produce a podspec that contains the Flutter cocoapod dependency
+        noPodspec()
+        
+        ios.deploymentTarget = "11.0"
+    }
+
+
     iosX64()
     iosArm64()
     iosSimulatorArm64()
-    wasmJs {
-        nodejs()
-    }
+    wasmJs { nodejs() }
 
     applyDefaultHierarchyTemplate()
 

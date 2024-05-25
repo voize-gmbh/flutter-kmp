@@ -1,0 +1,37 @@
+[versions]
+kotlin = "1.9.23"
+kotlin-coroutines = "1.8.0"
+ksp = "1.9.23-1.0.20"
+kotlinpoet = "1.13.2"
+swiftpoet = "1.6.5"
+
+[libraries]
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+kotlin-stdlib-android = { module = "org.jetbrains.kotlin:kotlin-stdlib-android", version.ref = "kotlin" }
+
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlin-coroutines" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlin-coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlin-coroutines" }
+
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.6.3" }
+
+kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
+kotlinpoet-metadata = { module = "com.squareup:kotlinpoet-metadata", version.ref = "kotlinpoet" }
+kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinpoet" }
+
+swiftpoet = { module = "io.outfoxx:swiftpoet", version.ref = "swiftpoet" }
+
+google-auto-service = { module = "com.google.auto.service:auto-service", version = "1.0.1" }
+
+ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
+
+gradle-plugin-android = { module = "com.android.tools.build:gradle", version = "8.1.4" }
+gradle-plugin-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+gradle-plugin-kotlin-serialization = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
+
+[bundles]
+
+[plugins]
+test-logger = { id = "com.adarshr.test-logger", version = "3.2.0" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

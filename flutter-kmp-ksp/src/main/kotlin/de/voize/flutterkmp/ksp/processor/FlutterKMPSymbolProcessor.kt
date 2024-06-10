@@ -156,11 +156,11 @@ class FlutterKMPSymbolProcessor(
                     codeGenerator,
                 )
             }
-
             if (JvmPlatform !in platformNames && NativePlatform in platformNames) {
-                IOSModuleGenerator().generateModule(
+                IOSKotlinModuleGenerator().generateModule(
                     flutterModule,
                     primaryConstructorParameters,
+                    constructorInvocation,
                     codeGenerator,
                 )
             }

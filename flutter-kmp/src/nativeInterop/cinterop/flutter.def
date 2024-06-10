@@ -1,0 +1,3 @@
+language = Objective-C
+headers = Flutter/FlutterPlugin.h
+headerFilter = Flutter/*

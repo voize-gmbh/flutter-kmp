@@ -128,114 +128,6 @@ class AndroidModuleGenerator {
         fileSpec.writeTo(codeGenerator, false)
     }
 
-    private fun CodeBlock.Builder.addMethodCodeBlock(
-        method: KSFunctionDeclaration,
-        wrappedModuleVarName: String,
-    ) {
-        beginControlFlow("%S ->", method.simpleName.asString())
-
-        if (method.parameters.isNotEmpty()) {
-            //
-            // val arguments = call.arguments as List<*>
-            // val arg0 = arguments[0] as Arg0Type
-            // ...
-            //
-            addStatement("val arguments = call.arguments as List<*>")
-            method.parameters.forEachIndexed { index, parameter ->
-                getKotlinDeserialization(
-                    parameter.type.resolve(),
-                    "arguments[$index]",
-                    "arg$index",
-                )
-            }
-        }
-
-        fun withCoroutineScopeControlFlow(block: CodeBlock.Builder.() -> Unit) {
-            beginControlFlow(
-                "%T(%T.Default).%M",
-                CoroutineScope,
-                Dispatchers,
-                launch,
-            )
-            block()
-            endControlFlow()
-        }
-
-        fun invokeUnitMethodStatement() {
-            addStatement(
-                "%N.%L(%L)",
-                wrappedModuleVarName,
-                method.simpleName.asString(),
-                method.parameters.indices.joinToString(", ") { "arg$it" }
-            )
-        }
-
-        fun invokeMethodStatement() {
-            addStatement(
-                "val resultData = %N.%L(%L)",
-                wrappedModuleVarName,
-                method.simpleName.asString(),
-                method.parameters.indices.joinToString(", ") { "arg$it" }
-            )
-
-            val returnTypeDeclaration = (method.returnType ?: error("return type is null")).resolve().declaration
-
-            addStatement("val json = %T { encodeDefaults = true }", JsonClassName)
-            getKotlinSerialization(returnTypeDeclaration, "resultData", "json")
-        }
-
-        fun unitResultSuccessStatement() {
-            addStatement("result.success(null)")
-        }
-
-        if (method.returnsUnit()) {
-            if (method.modifiers.contains(Modifier.SUSPEND)) {
-                //
-                // CoroutineScope(Dispatchers.Default).launch {
-                //      wrappedModule.method(arg0, arg1, ...)
-                //      result.success(null)
-                // }
-                //
-                withCoroutineScopeControlFlow {
-                    invokeUnitMethodStatement()
-                    unitResultSuccessStatement()
-                }
-
-            } else {
-                //
-                // wrappedModule.method(arg0, arg1, ...)
-                // result.success(null)
-                //
-                invokeUnitMethodStatement()
-                unitResultSuccessStatement()
-            }
-        } else {
-            if (method.modifiers.contains(Modifier.SUSPEND)) {
-                //
-                // CoroutineScope(Dispatchers.Default).launch {
-                //      result.success(wrappedModule.method())
-                // }
-                //
-                withCoroutineScopeControlFlow {
-                    invokeMethodStatement()
-                }
-            } else {
-                //
-                // result.success(wrappedModule.method())
-                //
-                invokeMethodStatement()
-            }
-        }
-        endControlFlow()
-    }
-
-    fun KSValueParameter.toParameterSpec(): ParameterSpec {
-        return ParameterSpec.builder(
-            this.name?.asString() ?: error("Parameter must have a name"),
-            this.type.toTypeName()
-        )
-            .build()
-    }
 
 
     /**
@@ -256,6 +148,7 @@ class AndroidModuleGenerator {
     private fun CodeBlock.Builder.addStateFlowCodeBlock(
         stateFlow: KSDeclaration,
         wrappedModuleVarName: String,
+        resultStatement: (resultParameter: String) -> String = { "result.success($it)" },
     ) {
         val flowTypeArgument = stateFlow.getStateFlowDeclarationFlowTypeArgument()
         val parameters = when (stateFlow) {
@@ -339,92 +232,16 @@ class AndroidModuleGenerator {
         }
         endControlFlow()
 
-        getKotlinSerialization(flowTypeArgument.declaration, "next", "json")
+        getKotlinSerialization(
+            flowTypeArgument.declaration,
+            "next",
+            "serializedNext",
+            "json"
+        )
+        addStatement(resultStatement("serializedNext"))
 
         endControlFlow()
         endControlFlow()
-    }
-}
-
-private fun CodeBlock.Builder.getKotlinSerialization(
-    declaration: KSDeclaration,
-    varName: String,
-    jsonInstanceVarName: String? = null,
-) {
-    if (declaration.requiresSerialization()) {
-        require(jsonInstanceVarName != null)
-        addStatement(
-            "result.success(%L.%M(%L))",
-            jsonInstanceVarName,
-            encodeToString,
-            varName,
-        )
-    } else when (declaration.qualifiedName?.asString()) {
-        "kotlinx.datetime.Instant",
-        "kotlinx.datetime.LocalDateTime",
-        "kotlinx.datetime.LocalTime",
-        "kotlinx.datetime.LocalDate" -> addStatement("result.success(%L.toString())", varName)
-        "kotlin.time.Duration" -> addStatement("result.success(%L.toIsoString())", varName)
-        else -> addStatement("result.success(%L)", varName)
-    }
-}
-
-private fun CodeBlock.Builder.getKotlinDeserialization(type: KSType, varName: String, assignTo: String) {
-    if (type.declaration.requiresSerialization()) {
-        addStatement(
-            "val %L = %T.decodeFromString<%T>(%L as String)",
-            assignTo,
-            JsonClassName,
-            type.toTypeName(),
-            varName,
-        )
-    } else when (type.declaration.qualifiedName?.asString()) {
-        "kotlinx.datetime.Instant" -> {
-            addStatement(
-                "val %L = %T.parse(%L as String)",
-                assignTo,
-                Instant,
-                varName,
-            )
-        }
-        "kotlinx.datetime.LocalDateTime" -> {
-            addStatement(
-                "val %L = %T.parse(%L as String)",
-                assignTo,
-                LocalDateTime,
-                varName,
-            )
-        }
-        "kotlinx.datetime.LocalDate" -> {
-            addStatement(
-                "val %L = %T.parse(%L as String)",
-                assignTo,
-                LocalDate,
-                varName,
-            )
-        }
-        "kotlinx.datetime.LocalTime" -> {
-            addStatement(
-                "val %L = %T.parse(%L as String)",
-                assignTo,
-                LocalTime,
-                varName,
-            )
-        }
-        "kotlin.time.Duration" -> {
-            addStatement(
-                "val %L = %T.parse(%L as String)",
-                assignTo,
-                Duration,
-                varName,
-            )
-        }
-        else -> addStatement(
-            "val %L = %L as %T",
-            assignTo,
-            varName,
-            type.toTypeName(),
-        )
     }
 }
 
@@ -435,16 +252,3 @@ private val EventChannel = ClassName("io.flutter.plugin.common", "EventChannel")
 private val MethodCall = ClassName("io.flutter.plugin.common", "MethodCall")
 private val MethodChannelResult = ClassName("io.flutter.plugin.common.MethodChannel", "Result")
 private val toEventStreamHandler = MemberName(flutterKmpPackageName, "toEventStreamHandler")
-
-private val Duration = ClassName("kotlin.time", "Duration")
-private val Instant = ClassName("kotlinx.datetime", "Instant")
-private val LocalDate = ClassName("kotlinx.datetime", "LocalDate")
-private val LocalTime = ClassName("kotlinx.datetime", "LocalTime")
-private val LocalDateTime = ClassName("kotlinx.datetime", "LocalDateTime")
-private val Dispatchers = ClassName("kotlinx.coroutines", "Dispatchers")
-private val launch = MemberName("kotlinx.coroutines", "launch")
-private val CoroutineScope = ClassName("kotlinx.coroutines", "CoroutineScope")
-private val ListOfMember = MemberName("kotlin.collections", "listOf")
-private val JsonClassName = ClassName("kotlinx.serialization.json", "Json")
-private val encodeToString = MemberName("kotlinx.serialization", "encodeToString")
-private val first = MemberName("kotlinx.coroutines.flow", "first")

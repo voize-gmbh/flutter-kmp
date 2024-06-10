@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.kotlinCocoapods)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlinSerialization)
@@ -8,7 +9,6 @@ plugins {
 val flutterKmpVersion = "0.1.0"
 
 kotlin {
-    targetHierarchy.default()
     jvm()
     androidTarget {
         publishLibraryVariants("release")
@@ -18,9 +18,29 @@ kotlin {
             }
         }
     }
-    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
+
+    listOf(
+        iosX64(),
+        iosArm64(),
+        iosSimulatorArm64()
+    ).forEach {
+        it.binaries.framework {
+            baseName = "shared"
+        }
+    }
+
+    applyDefaultHierarchyTemplate()
+
+    cocoapods {
+        name = "FlutterKmpExample"
+        version = "0.1.0"
+
+        framework {
+            homepage = "https://github.com/voize-gmbh/flutter-kmp"
+            summary = "Shared Kotlin code for flutter-kmp example"
+            baseName = "shared"
+        }
+    }
 
     sourceSets {
         val androidMain by getting {
@@ -40,6 +60,16 @@ kotlin {
             dependencies {
                 implementation(libs.kotlin.test)
             }
+        }
+
+        val iosX64Main by getting {
+            kotlin.srcDir("build/generated/ksp/iosX64/iosX64Main/kotlin")
+        }
+        val iosArm64Main by getting {
+            kotlin.srcDir("build/generated/ksp/iosArm64/iosArm64Main/kotlin")
+        }
+        val iosSimulatorArm64Main by getting {
+            kotlin.srcDir("build/generated/ksp/iosSimulatorArm64/iosSimulatorArm64Main/kotlin")
         }
     }
 }

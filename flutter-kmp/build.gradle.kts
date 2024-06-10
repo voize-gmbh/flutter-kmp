@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
@@ -28,12 +30,20 @@ kotlin {
         }
         publishLibraryVariants("release")
     }
-    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
-    wasmJs {
-        nodejs()
+
+    fun KotlinNativeTarget.configureFlutterInterop() {
+        val main by compilations.getting {
+            val flutter by cinterops.creating {
+                includeDirs("src/nativeInterop/cinterop/")
+                packageName("flutter")
+            }
+        }
     }
+
+    iosX64 { configureFlutterInterop() }
+    iosArm64 { configureFlutterInterop() }
+    iosSimulatorArm64 { configureFlutterInterop() }
+    wasmJs { nodejs() }
 
     applyDefaultHierarchyTemplate()
 

@@ -3,6 +3,8 @@ import UIKit
 
 public class FlutterKmpExamplePlugin: NSObject, FlutterPlugin {
   public static func register(with registrar: FlutterPluginRegistrar) {
+
+    let myTestClass = MyTestClassIOS()
     let channel = FlutterMethodChannel(name: "flutter_kmp_example", binaryMessenger: registrar.messenger())
     let instance = FlutterKmpExamplePlugin()
     registrar.addMethodCallDelegate(instance, channel: channel)

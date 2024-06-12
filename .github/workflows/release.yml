@@ -1,7 +1,9 @@
 name: Publish artifacts
 on:
-  release:
-    types: [published]
+  pull_request:
+    branches:
+      - publishing-test
+
 jobs:
   publish-maven:
     name: Build and publish to Maven Repository

@@ -2,6 +2,8 @@
 
 ## unreleased
 
+## v0.1.0-rc.2
+
 - Fix errors with boolean types in method return and flow types on iOS
 
 ## v0.1.0-rc.1

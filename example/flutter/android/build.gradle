@@ -45,7 +45,7 @@ android {
     }
 
     dependencies {
-        implementation("com.example:flutter-kmp-example:0.1.0-rc.0")
+        implementation("com.example:flutter-kmp-example:0.1.0")
 
         testImplementation("org.jetbrains.kotlin:kotlin-test")
         testImplementation("org.mockito:mockito-core:5.0.0")

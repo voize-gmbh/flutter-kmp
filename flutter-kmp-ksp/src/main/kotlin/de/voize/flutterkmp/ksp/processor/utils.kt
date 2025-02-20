@@ -166,6 +166,10 @@ fun KSDeclaration.requiresSerialization(): Boolean {
         "kotlin.collections.List",
         "kotlin.collections.Map",
         "kotlin.collections.Set",
+        // Booleans are translated to Ints during Kotlin -> ObjC -> Dart interop (although not in the other direction),
+        // leading to errors like "_TypeError (type 'int' is not a subtype of type 'bool?' in type cast)"
+        // we therefore serialize them to strings.
+        "kotlin.Boolean",
     )
 
     return qualifiedName?.asString() in types
@@ -277,7 +281,12 @@ return MapEntry(key, ${valueType.getNestedDartDeserializationStatement("value")}
 }
 
 internal fun DartType.getDartDeserializationStatement(varName: String, deserializePrimitive: Boolean = false): String = when (this) {
-    is DartType.Primitive -> if (deserializePrimitive) { "jsonDecode($varName) as ${this.toTypeName()}" } else varName
+    is DartType.Primitive -> if (
+        // Booleans always need deserialization
+        deserializePrimitive || this is DartType.Primitive.Bool
+    ) {
+        "jsonDecode($varName) as ${this.toTypeName()}"
+    } else varName
     is DartType.DateTime, is DartType.LocalDateTime, is DartType.LocalDate -> "DateTime.parse($varName)"
     is DartType.Duration -> "parseIso8601Duration($varName)"
     is DartType.TimeOfDay -> "TimeOfDay.fromDateTime(DateTime.parse(\"1998-01-01T${'$'}$varName:00.000\"))"
@@ -330,7 +339,13 @@ internal fun DartType.getDartSerializationStatement(varName: String): String? {
         is DartType.LocalDate -> "if ($varName.isUtc) throw ArgumentError('$varName must not be in UTC');\n"
         else ->  ""
     } + "final ${varName}Serialized = " + when (this) {
-        is DartType.Primitive -> return null
+        is DartType.Primitive -> when (this) {
+            is DartType.Primitive.Bool -> "${varName}.toString()"
+            is DartType.Primitive.Double,
+            is DartType.Primitive.Float,
+            is DartType.Primitive.Int,
+            is DartType.Primitive.String -> return null
+        }
         is DartType.Duration -> "${varName}.toIso8601String()"
         is DartType.TimeOfDay -> "\"${'$'}{$varName.hour.toString().padLeft(2, '0')}:${'$'}{$varName.minute.toString().padLeft(2, '0')}\""
         is DartType.LocalDate -> "${varName}.toIso8601String().split('T').first"

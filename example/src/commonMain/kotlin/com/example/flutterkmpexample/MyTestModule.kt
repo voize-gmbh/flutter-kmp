@@ -6,7 +6,6 @@ import de.voize.flutterkmp.annotation.FlutterModule
 import de.voize.flutterkmp.annotation.FlutterStateFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -27,6 +26,7 @@ val SharedCoroutineScope = CoroutineScope(Dispatchers.Default)
 @FlutterModule("MyTestModule")
 class MyTestModule(coroutineScope: CoroutineScope) {
     private val _intStateFlow = MutableStateFlow(0)
+    private val _boolStateFlow = MutableStateFlow(false)
     private val _dataClassStateFlow = MutableStateFlow(myDataClassInstance)
     private val _dataClassSharedFlow = MutableSharedFlow<MyDataClass>()
 
@@ -34,6 +34,7 @@ class MyTestModule(coroutineScope: CoroutineScope) {
         coroutineScope.launch {
             while (true) {
                 delay(2.seconds)
+                _boolStateFlow.value = !_boolStateFlow.value
                 _intStateFlow.value++
                 _dataClassSharedFlow.emit(myDataClassInstance)
             }
@@ -59,6 +60,9 @@ class MyTestModule(coroutineScope: CoroutineScope) {
 
     @FlutterMethod
     fun doubleMethod(value: Double): Double = value
+
+    @FlutterMethod
+    fun boolMethod(value: Boolean): Boolean = value
 
     @FlutterMethod
     fun parameterizedMethod(
@@ -198,6 +202,9 @@ class MyTestModule(coroutineScope: CoroutineScope) {
     val intEvents: Flow<Int> = _intStateFlow
 
     @FlutterFlow
+    val boolEvents: Flow<Boolean> = _boolStateFlow
+
+    @FlutterFlow
     val dataClassEvents: Flow<MyDataClass> = _dataClassSharedFlow
 
     @FlutterStateFlow
@@ -208,6 +215,9 @@ class MyTestModule(coroutineScope: CoroutineScope) {
 
     @FlutterStateFlow
     fun parameterizedDataClassState(data: MyDataClass): Flow<MyDataClass> = _dataClassStateFlow
+
+    @FlutterStateFlow
+    val boolState: Flow<Boolean> = _boolStateFlow
 
     @FlutterStateFlow
     fun intStateAdd(num: Int): Flow<Int> = _intStateFlow.map { it + num }

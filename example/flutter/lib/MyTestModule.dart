@@ -13,6 +13,9 @@ class MyTestModule {
   final Stream<int> intEvents = const EventChannel('MyTestModule_intEvents')
     .receiveBroadcastStream()
     .map((event) => jsonDecode(event) as int);
+final Stream<bool> boolEvents = const EventChannel('MyTestModule_boolEvents')
+    .receiveBroadcastStream()
+    .map((event) => jsonDecode(event) as bool);
 final Stream<MyDataClass> dataClassEvents = const EventChannel('MyTestModule_dataClassEvents')
     .receiveBroadcastStream()
     .map((event) => MyDataClass.fromJson(jsonDecode(event) as Map<String, dynamic>));
@@ -107,6 +110,41 @@ final Stream<MyDataClass> dataClassEvents = const EventChannel('MyTestModule_dat
                         streamController.add(null);
                     } else {
                         streamController.add(MyDataClass.fromJson(jsonDecode(currentValue) as Map<String, dynamic>));
+                    }
+                }
+            } catch (e) {
+                if (!streamController.isClosed) {
+                    streamController.addError(e);
+                }
+            }
+        }
+    }
+    
+    streamController.onListen = startEmittingValues;
+    
+    return streamController.stream.listen(onData);
+}
+        StreamSubscription<bool?> boolState(Function(bool?) onData) {
+    final streamController = StreamController<bool?>();
+    
+
+    Future<String?> next(String? previous) async {
+    return await methodChannelToNative.invokeMethod<String>(
+            'boolState',
+            [previous]
+        );
+    }
+    
+    void startEmittingValues() async {
+        String? currentValue;
+        while (!streamController.isClosed) {
+            try {
+                currentValue = await next(currentValue);
+                if (!streamController.isClosed) {
+                    if (currentValue == null) {
+                        streamController.add(null);
+                    } else {
+                        streamController.add(jsonDecode(currentValue) as bool);
                     }
                 }
             } catch (e) {
@@ -229,9 +267,24 @@ Future<double> doubleMethod(double value) async {
 
     return result;
 }
+Future<bool> boolMethod(bool value) async {
+    final valueSerialized = value.toString();
+    final invokeResult = await methodChannelToNative.invokeMethod<String>(
+        'boolMethod',
+        [valueSerialized],
+    );
+
+    if (invokeResult == null) {
+        throw PlatformException(code: '1', message: 'Method boolMethod failed');
+    }
+
+    final result = jsonDecode(invokeResult) as bool;
+
+    return result;
+}
 Future<void> parameterizedMethod(String a, int b, bool c, double d) async {
-    
-    await methodChannelToNative.invokeMethod<void>('parameterizedMethod', [a, b, c, d]);
+    final cSerialized = c.toString();
+    await methodChannelToNative.invokeMethod<void>('parameterizedMethod', [a, b, cSerialized, d]);
 }
 Future<DateTime> localDateTimeMethod(DateTime localDateTime) async {
     if (localDateTime.isUtc) throw ArgumentError('localDateTime must not be in UTC');

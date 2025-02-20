@@ -2,6 +2,8 @@
 
 ## unreleased
 
+- Fix errors with boolean types in method return and flow types on iOS
+
 ## v0.1.0-rc.1
 
 - Update Kotlin to 2.1.0 and KSP to 2.0.21-1.0.25

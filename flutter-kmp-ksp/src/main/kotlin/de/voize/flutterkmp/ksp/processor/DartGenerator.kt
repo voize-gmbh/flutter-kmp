@@ -104,7 +104,7 @@ final Stream<${flowTypeArgument.toTypeName()}> $propertyName = const EventChanne
         }
 
         val intermediateType = if (flowTypeArgument.requiresSerialization()) {
-            DartType.Primitive("String")
+            DartType.Primitive.String()
         } else flowTypeArgument
 
         val invokeMethodArguments = listOf("previous") + dartParameters.map { (varName, type) ->

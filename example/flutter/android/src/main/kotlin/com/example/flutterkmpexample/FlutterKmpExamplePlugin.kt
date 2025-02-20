@@ -4,10 +4,13 @@ import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodChannel
 
 class FlutterKmpExamplePlugin: FlutterPlugin {
-  private val methodChannels = mutableListOf<MethodChannel>()
+  private var methodChannels = emptyList<MethodChannel>()
 
   override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-    methodChannels += MyTestClassAndroid(flutterPluginBinding.binaryMessenger, SharedCoroutineScope)
+    methodChannels = listOf(
+      MyTestModuleAndroid(flutterPluginBinding.binaryMessenger, SharedCoroutineScope),
+      MySecondTestModuleAndroid(flutterPluginBinding.binaryMessenger, SharedCoroutineScope),
+    )
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {

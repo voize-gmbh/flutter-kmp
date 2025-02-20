@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:flutter/services.dart';
-import 'package:flutter_kmp_example/MyTestClass.dart';
+import 'package:flutter_kmp_example/MySecondTestModule.dart';
+import 'package:flutter_kmp_example/MyTestModule.dart';
 import 'package:flutter_kmp_example/flutter_kmp_example.dart';
 import 'package:flutter_kmp_example/models.dart';
 
@@ -20,11 +21,12 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   late StreamSubscription<int> _subscription;
   late StreamSubscription<int> _subscription2;
-  late StreamSubscription<int?> _subscription3;
-  late StreamSubscription<int?> _subscription4;
-  late StreamSubscription<MyDataClass?> _subscription5;
-  late StreamSubscription<MyDataClass?> _subscription6;
-  late StreamSubscription<MyDataClass> _subscription7;
+  late StreamSubscription<int?> _intStateSubscription;
+  late StreamSubscription<int?> _intStateAddSubscription;
+  late StreamSubscription<MyDataClass?> _dataClassStateSubscription;
+  late StreamSubscription<MyDataClass?> _parameterizedDataClassFlowSubscription;
+  late StreamSubscription<MyDataClass> _dataClassEventsSubscription;
+  late StreamSubscription<MyDataClass> _secondModuleDataClassEventsSubscription;
 
   @override
   void initState() {
@@ -38,7 +40,7 @@ class _MyAppState extends State<MyApp> {
     // setState to update our non-existent appearance.
     if (!mounted) return;
 
-    final myTestClass = MyTestClass();
+    final myTestModule = MyTestModule();
 
     final data = MyDataClass(
       "dwa",
@@ -67,112 +69,124 @@ class _MyAppState extends State<MyApp> {
       null,
     );
 
-    () async {
-      await myTestClass.unitMethod();
-      print(await myTestClass.stringMethod());
-      await myTestClass.suspendUnitMethod();
-      print(await myTestClass.suspendStringMethod());
-      print(await myTestClass.nullableMethod());
-      await myTestClass.parameterizedMethod("dwa", 123, false, 213.3);
+    await myTestModule.unitMethod();
+    print(await myTestModule.simpleMethod());
+    print(await myTestModule.stringMethod("test"));
+    print(await myTestModule.nullableStringMethod(null));
+    print(await myTestModule.intMethod(1));
+    print(await myTestModule.doubleMethod(1.0));
+    await myTestModule.parameterizedMethod("dwa", 123, false, 213.3);
 
-      final result = await myTestClass.dataClassMethod(data);
+    await myTestModule.suspendUnitMethod();
+    print(await myTestModule.suspendStringMethod());
+    final result = await myTestModule.dataClassMethod(data);
 
-      print(result.stringProp);
+    print(result.stringProp);
 
-      print(await myTestClass.stringListMethod(["hello", "world"]));
-      print(await myTestClass.nestedListMethod([
-        ["hello", "world"]
-      ]));
-      print(await myTestClass.dataClassListMethod([data]));
-      print(await myTestClass.nestedDataClassListMethod([
-        [data]
-      ]));
-      print(await myTestClass.mapMethod({'a': 123, 'b': 456}));
-      print(await myTestClass.mixedMethod({
+    print(await myTestModule.stringListMethod(["hello", "world"]));
+    print(await myTestModule.nestedListMethod([
+      ["hello", "world"]
+    ]));
+    print(await myTestModule.dataClassListMethod([data]));
+    print(await myTestModule.nestedDataClassListMethod([
+      [data]
+    ]));
+    print(await myTestModule.mapMethod({'a': 123, 'b': 456}));
+    print(await myTestModule.mixedMethod({
+      'a': [
+        {'a': data}
+      ]
+    }));
+
+    print(await myTestModule.objectMethod(MyDataObject()));
+
+    final sealedData =
+        MySealedDataOption1("dwa", MySealedDataOption1Nested("dwa"));
+    print(await myTestModule.sealedMethod(sealedData));
+
+    print(await myTestModule.enumMethod(MyEnum.CASE_1));
+    print(await myTestModule.enumListMethod([MyEnum.CASE_1, MyEnum.CASE_2]));
+    print(await myTestModule
+        .enumMapMethod({'a': MyEnum.CASE_1, 'b': MyEnum.CASE_2}));
+
+    final dataWithSealedData = MyDataClassWithSealed(
+      sealedData,
+      null,
+      [sealedData],
+      null,
+      [
+        [sealedData]
+      ],
+      {'a': sealedData},
+      null,
+      {
+        'a': {'a': sealedData}
+      },
+      {
         'a': [
-          {'a': data}
+          {'a': sealedData}
         ]
-      }));
+      },
+    );
 
-      print(await myTestClass.objectMethod(MyDataObject()));
+    print(await myTestModule.classWithSealedPropMethod(dataWithSealedData));
 
-      final sealedData =
-          MySealedDataOption1("dwa", MySealedDataOption1Nested("dwa"));
-      print(await myTestClass.sealedMethod(sealedData));
+    print(await myTestModule.instantMethod(DateTime.now().toUtc()));
+    print(await myTestModule.localDateTimeMethod(DateTime.now()));
+    print(await myTestModule.localDateMethod(DateTime.now()));
+    print(await myTestModule.localTimeMethod(TimeOfDay.now()));
+    print(await myTestModule.durationMethod(const Duration(seconds: 123)));
 
-      print(await myTestClass.enumMethod(MyEnum.CASE_1));
-      print(await myTestClass.enumListMethod([MyEnum.CASE_1, MyEnum.CASE_2]));
-      print(await MyTestClass()
-          .enumMapMethod({'a': MyEnum.CASE_1, 'b': MyEnum.CASE_2}));
+    print(await myTestModule.dateClassMethod(MyDateClass(
+        DateTime.now(),
+        TimeOfDay.now(),
+        DateTime.now(),
+        const Duration(seconds: 123),
+        DateTime.now().toUtc())));
 
-      final dataWithSealedData = MyDataClassWithSealed(
-        sealedData,
-        null,
-        [sealedData],
-        null,
-        [
-          [sealedData]
-        ],
-        {'a': sealedData},
-        null,
-        {
-          'a': {'a': sealedData}
-        },
-        {
-          'a': [
-            {'a': sealedData}
-          ]
-        },
-      );
-
-      print(await myTestClass.classWithSealedPropMethod(dataWithSealedData));
-
-      print(await myTestClass.instantMethod(DateTime.now().toUtc()));
-      print(await myTestClass.localDateTimeMethod(DateTime.now()));
-      print(await myTestClass.localDateMethod(DateTime.now()));
-      print(await myTestClass.localTimeMethod(TimeOfDay.now()));
-      print(await myTestClass.durationMethod(const Duration(seconds: 123)));
-
-      print(await myTestClass.dateClassMethod(MyDateClass(
-          DateTime.now(),
-          TimeOfDay.now(),
-          DateTime.now(),
-          const Duration(seconds: 123),
-          DateTime.now().toUtc())));
-    }();
-
-    final broadcaster = myTestClass.counterEvents;
+    final broadcaster = myTestModule.intEvents;
 
     // this starts a collect on the counter flow that is shared across all listeners
     _subscription = broadcaster.listen((item) {
-      print("flow event subscription 1: $item");
+      print("int event subscription 1: $item");
     });
 
     await Future.delayed(const Duration(milliseconds: 2000));
 
     // because this subscription comes later it will not have the first event
     _subscription2 = broadcaster.listen((item) {
-      print("flow event subscription 2: $item");
+      print("int event subscription 2: $item");
     });
 
-    _subscription3 = myTestClass.counter((item) {
-      print("state flow value: $item");
+    _intStateSubscription = myTestModule.intState((item) {
+      print("int state value: $item");
     });
 
-    _subscription4 = myTestClass.counterPlus(20, (item) {
-      print("state flow value: $item");
+    _intStateAddSubscription = myTestModule.intStateAdd(20, (item) {
+      print("int state add value: $item");
     });
 
-    _subscription5 = myTestClass.myDataClassFlow((item) {
-      print("data class state flow value: $item");
+    _dataClassStateSubscription = myTestModule.dataClassState((item) {
+      print("data class state value: $item");
     });
 
-    _subscription6 = myTestClass.myParameterizedDataClassFlow(data, (item) {
-      print("parameterized data class state flow value: $item");
+    _parameterizedDataClassFlowSubscription =
+        myTestModule.parameterizedDataClassState(data, (item) {
+      print("parameterized data class state value: $item");
     });
 
-    _subscription7 = myTestClass.myDataClassEvents.listen((item) {
+    _dataClassEventsSubscription = myTestModule.dataClassEvents.listen((item) {
       print("data class events: $item");
+    });
+
+    final mySecondTestModule = MySecondTestModule();
+
+    print(
+        "mySecondTestModule.testMethod: ${await mySecondTestModule.testMethod()}");
+
+    _secondModuleDataClassEventsSubscription =
+        mySecondTestModule.dataClassEvents.listen((item) {
+      print("mySecondTestModule.dataClassEvents: $item");
     });
   }
 
@@ -180,11 +194,12 @@ class _MyAppState extends State<MyApp> {
   void dispose() {
     _subscription.cancel();
     _subscription2.cancel();
-    _subscription3.cancel();
-    _subscription4.cancel();
-    _subscription5.cancel();
-    _subscription6.cancel();
-    _subscription7.cancel();
+    _intStateSubscription.cancel();
+    _intStateAddSubscription.cancel();
+    _dataClassStateSubscription.cancel();
+    _parameterizedDataClassFlowSubscription.cancel();
+    _dataClassEventsSubscription.cancel();
+    _secondModuleDataClassEventsSubscription.cancel();
     super.dispose();
   }
 
@@ -193,7 +208,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('Flutter KMP example app'),
         ),
         body: Center(
           child: Text('Hello!'),

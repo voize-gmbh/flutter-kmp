@@ -23,6 +23,8 @@ class _MyAppState extends State<MyApp> {
   late StreamSubscription<int> _subscription2;
   late StreamSubscription<int?> _intStateSubscription;
   late StreamSubscription<int?> _intStateAddSubscription;
+  late StreamSubscription<bool?> _boolStateSubscription;
+  late StreamSubscription<bool> _boolEventsSubscription;
   late StreamSubscription<MyDataClass?> _dataClassStateSubscription;
   late StreamSubscription<MyDataClass?> _parameterizedDataClassFlowSubscription;
   late StreamSubscription<MyDataClass> _dataClassEventsSubscription;
@@ -75,6 +77,7 @@ class _MyAppState extends State<MyApp> {
     print(await myTestModule.nullableStringMethod(null));
     print(await myTestModule.intMethod(1));
     print(await myTestModule.doubleMethod(1.0));
+    print(await myTestModule.boolMethod(false));
     await myTestModule.parameterizedMethod("dwa", 123, false, 213.3);
 
     await myTestModule.suspendUnitMethod();
@@ -166,6 +169,14 @@ class _MyAppState extends State<MyApp> {
       print("int state add value: $item");
     });
 
+    _boolStateSubscription = myTestModule.boolState((item) {
+      print("boolean state flow value: $item");
+    });
+
+    _boolEventsSubscription = myTestModule.boolEvents.listen((item) {
+      print("boolean event: $item");
+    });
+
     _dataClassStateSubscription = myTestModule.dataClassState((item) {
       print("data class state value: $item");
     });
@@ -196,6 +207,8 @@ class _MyAppState extends State<MyApp> {
     _subscription2.cancel();
     _intStateSubscription.cancel();
     _intStateAddSubscription.cancel();
+    _boolStateSubscription.cancel();
+    _boolEventsSubscription.cancel();
     _dataClassStateSubscription.cancel();
     _parameterizedDataClassFlowSubscription.cancel();
     _dataClassEventsSubscription.cancel();

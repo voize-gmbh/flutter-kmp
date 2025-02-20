@@ -4,25 +4,40 @@ import flutterkmpexample
 
 
 public class FlutterKmpExamplePlugin: NSObject, FlutterPlugin {
-  let myTestClass: MyTestClassIOS
+  let myTestModule: MyTestModuleIOS
+  let mySecondTestModule: MySecondTestModuleIOS
     
-  init(myTestClass: MyTestClassIOS) {
-    self.myTestClass = myTestClass
+  init(myTestModule: MyTestModuleIOS, mySecondTestModule: MySecondTestModuleIOS) {
+    self.myTestModule = myTestModule
+    self.mySecondTestModule = mySecondTestModule
   }
     
   public static func register(with registrar: FlutterPluginRegistrar) {
-    let myTestClass = MyTestClassIOS(coroutineScope: MyTestClassKt.SharedCoroutineScope)
-    let instance = FlutterKmpExamplePlugin(myTestClass: myTestClass)
+    let myTestModule = MyTestModuleIOS(coroutineScope: MyTestModuleKt.SharedCoroutineScope)
+    let mySecondTestModule = MySecondTestModuleIOS(coroutineScope: MyTestModuleKt.SharedCoroutineScope)
 
-    myTestClass.register(
+    let instance = FlutterKmpExamplePlugin(
+      myTestModule: myTestModule,
+      mySecondTestModule: mySecondTestModule
+    )
+
+    myTestModule.register(
+      registrar: registrar,
+      pluginInstance: instance
+    )
+
+    mySecondTestModule.register(
       registrar: registrar,
       pluginInstance: instance
     )
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-    let wasHandled = self.myTestClass.handleMethodCall(call: call, result: result)
-    if (!wasHandled) {
+    if (self.myTestModule.handleMethodCall(call: call, result: result)) {
+      return
+    } else if (self.mySecondTestModule.handleMethodCall(call: call, result: result)) {
+      return
+    } else {
       result(FlutterMethodNotImplemented)
     }
   }

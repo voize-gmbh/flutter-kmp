@@ -7,22 +7,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'models.dart';
                
-class MyTestClass {
-  final methodChannelToNative = const MethodChannel("MyTestClass");
+class MyTestModule {
+  final methodChannelToNative = const MethodChannel("MyTestModule");
   
-  final Stream<int> counterEvents = const EventChannel('MyTestClass_counterEvents')
+  final Stream<int> intEvents = const EventChannel('MyTestModule_intEvents')
     .receiveBroadcastStream()
     .map((event) => jsonDecode(event) as int);
-final Stream<MyDataClass> myDataClassEvents = const EventChannel('MyTestClass_myDataClassEvents')
+final Stream<MyDataClass> dataClassEvents = const EventChannel('MyTestModule_dataClassEvents')
     .receiveBroadcastStream()
     .map((event) => MyDataClass.fromJson(jsonDecode(event) as Map<String, dynamic>));
-          StreamSubscription<int?> counter(Function(int?) onData) {
+          StreamSubscription<int?> intState(Function(int?) onData) {
     final streamController = StreamController<int?>();
     
 
     Future<int?> next(int? previous) async {
     return await methodChannelToNative.invokeMethod<int>(
-            'counter',
+            'intState',
             [previous]
         );
     }
@@ -51,13 +51,13 @@ final Stream<MyDataClass> myDataClassEvents = const EventChannel('MyTestClass_my
     
     return streamController.stream.listen(onData);
 }
-        StreamSubscription<MyDataClass?> myDataClassFlow(Function(MyDataClass?) onData) {
+        StreamSubscription<MyDataClass?> dataClassState(Function(MyDataClass?) onData) {
     final streamController = StreamController<MyDataClass?>();
     
 
     Future<String?> next(String? previous) async {
     return await methodChannelToNative.invokeMethod<String>(
-            'myDataClassFlow',
+            'dataClassState',
             [previous]
         );
     }
@@ -86,13 +86,13 @@ final Stream<MyDataClass> myDataClassEvents = const EventChannel('MyTestClass_my
     
     return streamController.stream.listen(onData);
 }
-        StreamSubscription<MyDataClass?> myParameterizedDataClassFlow(MyDataClass data, Function(MyDataClass?) onData) {
+        StreamSubscription<MyDataClass?> parameterizedDataClassState(MyDataClass data, Function(MyDataClass?) onData) {
     final streamController = StreamController<MyDataClass?>();
     final dataSerialized = jsonEncode(data.toJson());
 
     Future<String?> next(String? previous) async {
     return await methodChannelToNative.invokeMethod<String>(
-            'myParameterizedDataClassFlow',
+            'parameterizedDataClassState',
             [previous, dataSerialized]
         );
     }
@@ -121,13 +121,13 @@ final Stream<MyDataClass> myDataClassEvents = const EventChannel('MyTestClass_my
     
     return streamController.stream.listen(onData);
 }
-        StreamSubscription<int?> counterPlus(int num, Function(int?) onData) {
+        StreamSubscription<int?> intStateAdd(int num, Function(int?) onData) {
     final streamController = StreamController<int?>();
     
 
     Future<int?> next(int? previous) async {
     return await methodChannelToNative.invokeMethod<int>(
-            'counterPlus',
+            'intStateAdd',
             [previous, num]
         );
     }
@@ -160,11 +160,26 @@ final Stream<MyDataClass> myDataClassEvents = const EventChannel('MyTestClass_my
     
     await methodChannelToNative.invokeMethod<void>('unitMethod', []);
 }
-Future<String> stringMethod() async {
+Future<String> simpleMethod() async {
+    
+    final invokeResult = await methodChannelToNative.invokeMethod<String>(
+        'simpleMethod',
+        [],
+    );
+
+    if (invokeResult == null) {
+        throw PlatformException(code: '1', message: 'Method simpleMethod failed');
+    }
+
+    final result = invokeResult;
+
+    return result;
+}
+Future<String> stringMethod(String value) async {
     
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
         'stringMethod',
-        [],
+        [value],
     );
 
     if (invokeResult == null) {
@@ -175,29 +190,20 @@ Future<String> stringMethod() async {
 
     return result;
 }
-Future<String?> nullableStringMethod() async {
+Future<String?> nullableStringMethod(String? value) async {
     
     final invokeResult = await methodChannelToNative.invokeMethod<String?>(
         'nullableStringMethod',
-        [],
+        [value],
     );
     final result = invokeResult;
     return result;
 }
-Future<String?> nullableMethod() async {
-    
-    final invokeResult = await methodChannelToNative.invokeMethod<String?>(
-        'nullableMethod',
-        [],
-    );
-    final result = invokeResult;
-    return result;
-}
-Future<int> intMethod() async {
+Future<int> intMethod(int value) async {
     
     final invokeResult = await methodChannelToNative.invokeMethod<int>(
         'intMethod',
-        [],
+        [value],
     );
 
     if (invokeResult == null) {
@@ -208,30 +214,15 @@ Future<int> intMethod() async {
 
     return result;
 }
-Future<double> doubleMethod() async {
+Future<double> doubleMethod(double value) async {
     
     final invokeResult = await methodChannelToNative.invokeMethod<double>(
         'doubleMethod',
-        [],
+        [value],
     );
 
     if (invokeResult == null) {
         throw PlatformException(code: '1', message: 'Method doubleMethod failed');
-    }
-
-    final result = invokeResult;
-
-    return result;
-}
-Future<bool> boolMethod() async {
-    
-    final invokeResult = await methodChannelToNative.invokeMethod<bool>(
-        'boolMethod',
-        [],
-    );
-
-    if (invokeResult == null) {
-        throw PlatformException(code: '1', message: 'Method boolMethod failed');
     }
 
     final result = invokeResult;

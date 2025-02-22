@@ -193,6 +193,11 @@ class _MyAppState extends State<MyApp> {
     final mySecondTestModule = MySecondTestModule();
 
     print(
+        "myTestModule.methodWithSameNameAsInOtherModule: ${await myTestModule.methodWithSameNameAsInOtherModule("abc")}");
+    print(
+        "mySecondTestModule.methodWithSameNameAsInOtherModule: ${await mySecondTestModule.methodWithSameNameAsInOtherModule(123)}");
+
+    print(
         "mySecondTestModule.testMethod: ${await mySecondTestModule.testMethod()}");
 
     _secondModuleDataClassEventsSubscription =

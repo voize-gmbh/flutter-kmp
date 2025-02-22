@@ -54,7 +54,7 @@ final Stream<${flowTypeArgument.toTypeName()}> $propertyName = const EventChanne
      *
      *     Future<bool?> next(bool? previous) async {
      *          return await methodChannelToNative.invokeMethod<int>(
-     *              'myFlow',
+     *              'myModule_myFlow',
      *              [subscriptionId, previous]
      *          );
      *     }
@@ -80,9 +80,9 @@ final Stream<${flowTypeArgument.toTypeName()}> $propertyName = const EventChanne
      *     return streamController.stream.listen(onData);
      * }
      */
-    private fun KSDeclaration.generateStateFlowMethod(): String {
+    private fun KSDeclaration.generateStateFlowMethod(moduleName: String): String {
         val propertyName = simpleName.asString()
-        val channelName = propertyName
+        val methodName = "${moduleName}_$propertyName"
         val flowTypeArgument = getStateFlowDeclarationFlowTypeArgument().toDartType()
 
         val parameters = when (this) {
@@ -122,7 +122,7 @@ final Stream<${flowTypeArgument.toTypeName()}> $propertyName = const EventChanne
 
     Future<${intermediateType.nullable().toTypeName()}> next(${intermediateType.nullable().toTypeName()} previous) async {
     return await methodChannelToNative.invokeMethod<${intermediateType.toTypeName()}>(
-            '$channelName',
+            '$methodName',
             [${invokeMethodArguments.joinToString(", ")}]
         );
     }
@@ -155,9 +155,9 @@ final Stream<${flowTypeArgument.toTypeName()}> $propertyName = const EventChanne
     }
 
 
-    private fun KSFunctionDeclaration.generateMethod(): String {
+    private fun KSFunctionDeclaration.generateMethod(moduleName: String): String {
         val methodName = simpleName.asString()
-        val eventName = simpleName.asString()
+        val eventName = "${moduleName}_$methodName"
         val returnTypeNotNull = returnType?.resolve() ?: error("return type is not set")
         val dartParameters = parameters.map {
             (it.name?.asString() ?: error("parameter has no name")) to it.type.resolve().toDartType()
@@ -245,8 +245,8 @@ class ${module.moduleName} {
   final methodChannelToNative = const MethodChannel("${module.moduleName}");
   
   ${module.flutterFlows.joinToString("\n") { it.generateFlowMember(module.moduleName) }}
-  ${module.flutterStateFlows.joinToString("\n") { it.generateStateFlowMethod() }}
-  ${module.flutterMethods.joinToString("\n") { it.generateMethod() }}
+  ${module.flutterStateFlows.joinToString("\n") { it.generateStateFlowMethod(module.moduleName) }}
+  ${module.flutterMethods.joinToString("\n") { it.generateMethod(module.moduleName) }}
 }
 """.trimIndent()
 

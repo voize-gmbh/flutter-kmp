@@ -2,6 +2,8 @@
 
 ## unreleased
 
+- Fix conflicts with same method names across different modules on iOS by prefixing method names
+
 ## v0.1.0-rc.2
 
 - Fix errors with boolean types in method return and flow types on iOS

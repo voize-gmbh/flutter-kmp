@@ -520,7 +520,7 @@ ${declaration.declarations.filterIsInstance<KSClassDeclaration>()
         val serializedType: String,
     )
 
-    val customSerializations = listOf(
+    private val customSerializations = listOf(
         // TimeOfDay is part of the material package and is not serializable by default
         CustomSerialization(
             detect = { prop ->
@@ -548,7 +548,7 @@ ${declaration.declarations.filterIsInstance<KSClassDeclaration>()
                     this.toDartType() is DartType.Duration
                 }
             },
-            serializeFnString = { varName, _ -> "$varName.toIso8601String()" },
+            serializeFnString = { varName, _ -> "$varName.toIso8601String().$patchIso8601DurationStringDartCode" },
             deserializeFnString = { varName, _ -> "parseIso8601Duration($varName)" },
             serializedType = "String",
         ),

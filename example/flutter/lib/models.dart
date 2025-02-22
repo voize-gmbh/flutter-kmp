@@ -85,7 +85,16 @@ MyDateClass(this.date, this.time, this.dateTime, this.duration, this.instant);
         static TimeOfDay _timeFromJson(String json) => TimeOfDay.fromDateTime(DateTime.parse("1998-01-01T$json:00.000"));
         
 
-        static String _durationToJson(Duration obj) => obj.toIso8601String();
+        static String _durationToJson(Duration obj) => obj.toIso8601String().replaceFirstMapped(RegExp(r'P([^T]*)(T.*)?'), (m) {
+        int totalDays = 0;
+        String datePart = m[1]!
+          .replaceAllMapped(RegExp(r'(\d+)Y'), (y) { totalDays += int.parse(y[1]!) * 365; return ''; })
+          .replaceAllMapped(RegExp(r'(\d+)M'), (m) { totalDays += int.parse(m[1]!) * 30; return ''; })
+          .replaceAllMapped(RegExp(r'(\d+)W'), (w) { totalDays += int.parse(w[1]!) * 7; return ''; })
+          .replaceAllMapped(RegExp(r'(\d+)D'), (d) { totalDays += int.parse(d[1]!); return ''; });
+
+        return 'P' + (totalDays > 0 ? '${totalDays}D' : '') + (m[2] ?? '');
+    });
         static Duration _durationFromJson(String json) => parseIso8601Duration(json);
         
 

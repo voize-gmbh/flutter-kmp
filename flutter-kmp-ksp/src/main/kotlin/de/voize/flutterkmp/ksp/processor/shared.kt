@@ -2,6 +2,7 @@ package de.voize.flutterkmp.ksp.processor
 
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.Modifier
@@ -11,13 +12,28 @@ import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ksp.toTypeName
 
+/**
+ * ```
+ * "moduleName_myMethod" -> {
+ *       val resultData = wrappedModule.testMethod()
+ *       val json = Json { encodeDefaults = true }
+ *       val serializedResultData = resultData
+ *       <resultStatement>(serializedResultData)
+ *       <append>
+ *  }
+ * ```
+ */
 internal fun CodeBlock.Builder.addMethodCodeBlock(
     method: KSFunctionDeclaration,
+    moduleName: String,
     wrappedModuleVarName: String,
     resultStatement: (resultParameter: String) -> String = { "result.success($it)" },
     append: CodeBlock.Builder.() -> Unit = {},
 ) {
-    beginControlFlow("%S ->", method.simpleName.asString())
+    beginControlFlow(
+        "%S ->",
+        "${moduleName}_${method.simpleName.asString()}",
+    )
 
     if (method.parameters.isNotEmpty()) {
         //
@@ -117,6 +133,131 @@ internal fun CodeBlock.Builder.addMethodCodeBlock(
             invokeMethodStatement()
         }
     }
+
+    append()
+
+    endControlFlow()
+}
+
+
+/**
+ * ```
+ * "myModule_myFlow" -> {
+ *      val arguments = call.arguments as List<*>
+ *      val previous = arguments[0] as Int
+ *
+ *      CoroutineScope(Dispatchers.Default).launch {
+ *          val next = wrappedModule.counter.first {
+ *              it != previous
+ *          }
+ *          <resultStatement>(next)
+ *      }
+ *
+ *      <append>
+ * }
+ * ```
+ */
+internal fun CodeBlock.Builder.addStateFlowCodeBlock(
+    stateFlow: KSDeclaration,
+    moduleName: String,
+    wrappedModuleVarName: String,
+    resultStatement: (resultParameter: String) -> String = { "result.success($it)" },
+    append: CodeBlock.Builder.() -> Unit = {},
+) {
+    val flowTypeArgument = stateFlow.getStateFlowDeclarationFlowTypeArgument()
+    val parameters = when (stateFlow) {
+        is KSPropertyDeclaration -> emptyList()
+        is KSFunctionDeclaration -> stateFlow.parameters
+        else -> error("only property and function declaration allowed for @FlutterStateFlow")
+    }
+
+    beginControlFlow(
+        "%S ->",
+        "${moduleName}_${stateFlow.simpleName.asString()}",
+    )
+
+    addStatement("val arguments = call.arguments as List<*>")
+
+    if (
+        flowTypeArgument.declaration.requiresSerialization() ||
+        listOf(
+            "kotlinx.datetime.Instant",
+            "kotlinx.datetime.LocalDateTime",
+            "kotlinx.datetime.LocalDate",
+            "kotlinx.datetime.LocalTime",
+            "kotlin.time.Duration",
+        ).contains(flowTypeArgument.declaration.qualifiedName?.asString())
+    ) {
+        addStatement("val previous = arguments[0] as String?")
+    } else {
+        addStatement(
+            "val previous = arguments[0] as %T",
+            flowTypeArgument.makeNullable().toTypeName(),
+        )
+    }
+
+    parameters.forEachIndexed { index, parameter ->
+        getKotlinDeserialization(
+            parameter.type.resolve(),
+            "arguments[${index + 1}]",
+            "param$index",
+        )
+    }
+
+    beginControlFlow(
+        "%T(%T.Default).%M",
+        CoroutineScope,
+        Dispatchers,
+        launch,
+    )
+
+    if (flowTypeArgument.declaration.requiresSerialization()) {
+        addStatement("val json = %T { encodeDefaults = true }", JsonClassName)
+    }
+
+    when (stateFlow) {
+        is KSPropertyDeclaration -> beginControlFlow(
+            "val next = %N.%L.%M",
+            wrappedModuleVarName,
+            stateFlow.simpleName.asString(),
+            first,
+        )
+        is KSFunctionDeclaration -> beginControlFlow(
+            "val next = %N.%L(%L).%M",
+            wrappedModuleVarName,
+            stateFlow.simpleName.asString(),
+            List(parameters.size) { index -> "param$index" }.joinToString(", "),
+            first,
+        )
+        else -> error("only property and function declaration allowed for @FlutterStateFlow")
+    }
+
+    if (flowTypeArgument.declaration.requiresSerialization()) {
+        addStatement("%L.encodeToString(it) != previous", "json")
+    } else if (
+        listOf(
+            "kotlinx.datetime.Instant",
+            "kotlinx.datetime.LocalDateTime",
+            "kotlinx.datetime.LocalDate",
+            "kotlinx.datetime.LocalTime",
+            "kotlin.time.Duration",
+        ).contains(flowTypeArgument.declaration.qualifiedName?.asString())
+    ) {
+        addStatement("%T.encodeToString(it) != previous", JsonClassName)
+    } else {
+        addStatement("it != previous")
+    }
+    endControlFlow()
+
+    getKotlinSerialization(
+        flowTypeArgument.declaration,
+        "next",
+        "serializedNext",
+        "json"
+    )
+    addStatement(resultStatement("serializedNext"))
+
+    endControlFlow()
 
     append()
 

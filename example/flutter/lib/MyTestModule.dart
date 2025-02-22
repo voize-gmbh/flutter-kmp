@@ -25,7 +25,7 @@ final Stream<MyDataClass> dataClassEvents = const EventChannel('MyTestModule_dat
 
     Future<int?> next(int? previous) async {
     return await methodChannelToNative.invokeMethod<int>(
-            'intState',
+            'MyTestModule_intState',
             [previous]
         );
     }
@@ -60,7 +60,7 @@ final Stream<MyDataClass> dataClassEvents = const EventChannel('MyTestModule_dat
 
     Future<String?> next(String? previous) async {
     return await methodChannelToNative.invokeMethod<String>(
-            'dataClassState',
+            'MyTestModule_dataClassState',
             [previous]
         );
     }
@@ -95,7 +95,7 @@ final Stream<MyDataClass> dataClassEvents = const EventChannel('MyTestModule_dat
 
     Future<String?> next(String? previous) async {
     return await methodChannelToNative.invokeMethod<String>(
-            'parameterizedDataClassState',
+            'MyTestModule_parameterizedDataClassState',
             [previous, dataSerialized]
         );
     }
@@ -130,7 +130,7 @@ final Stream<MyDataClass> dataClassEvents = const EventChannel('MyTestModule_dat
 
     Future<String?> next(String? previous) async {
     return await methodChannelToNative.invokeMethod<String>(
-            'boolState',
+            'MyTestModule_boolState',
             [previous]
         );
     }
@@ -165,7 +165,7 @@ final Stream<MyDataClass> dataClassEvents = const EventChannel('MyTestModule_dat
 
     Future<int?> next(int? previous) async {
     return await methodChannelToNative.invokeMethod<int>(
-            'intStateAdd',
+            'MyTestModule_intStateAdd',
             [previous, num]
         );
     }
@@ -196,12 +196,12 @@ final Stream<MyDataClass> dataClassEvents = const EventChannel('MyTestModule_dat
 }
   Future<void> unitMethod() async {
     
-    await methodChannelToNative.invokeMethod<void>('unitMethod', []);
+    await methodChannelToNative.invokeMethod<void>('MyTestModule_unitMethod', []);
 }
 Future<String> simpleMethod() async {
     
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'simpleMethod',
+        'MyTestModule_simpleMethod',
         [],
     );
 
@@ -216,7 +216,7 @@ Future<String> simpleMethod() async {
 Future<String> stringMethod(String value) async {
     
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'stringMethod',
+        'MyTestModule_stringMethod',
         [value],
     );
 
@@ -231,7 +231,7 @@ Future<String> stringMethod(String value) async {
 Future<String?> nullableStringMethod(String? value) async {
     
     final invokeResult = await methodChannelToNative.invokeMethod<String?>(
-        'nullableStringMethod',
+        'MyTestModule_nullableStringMethod',
         [value],
     );
     final result = invokeResult;
@@ -240,7 +240,7 @@ Future<String?> nullableStringMethod(String? value) async {
 Future<int> intMethod(int value) async {
     
     final invokeResult = await methodChannelToNative.invokeMethod<int>(
-        'intMethod',
+        'MyTestModule_intMethod',
         [value],
     );
 
@@ -255,7 +255,7 @@ Future<int> intMethod(int value) async {
 Future<double> doubleMethod(double value) async {
     
     final invokeResult = await methodChannelToNative.invokeMethod<double>(
-        'doubleMethod',
+        'MyTestModule_doubleMethod',
         [value],
     );
 
@@ -270,7 +270,7 @@ Future<double> doubleMethod(double value) async {
 Future<bool> boolMethod(bool value) async {
     final valueSerialized = value.toString();
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'boolMethod',
+        'MyTestModule_boolMethod',
         [valueSerialized],
     );
 
@@ -282,15 +282,30 @@ Future<bool> boolMethod(bool value) async {
 
     return result;
 }
+Future<String> methodWithSameNameAsInOtherModule(String value) async {
+    
+    final invokeResult = await methodChannelToNative.invokeMethod<String>(
+        'MyTestModule_methodWithSameNameAsInOtherModule',
+        [value],
+    );
+
+    if (invokeResult == null) {
+        throw PlatformException(code: '1', message: 'Method methodWithSameNameAsInOtherModule failed');
+    }
+
+    final result = invokeResult;
+
+    return result;
+}
 Future<void> parameterizedMethod(String a, int b, bool c, double d) async {
     final cSerialized = c.toString();
-    await methodChannelToNative.invokeMethod<void>('parameterizedMethod', [a, b, cSerialized, d]);
+    await methodChannelToNative.invokeMethod<void>('MyTestModule_parameterizedMethod', [a, b, cSerialized, d]);
 }
 Future<DateTime> localDateTimeMethod(DateTime localDateTime) async {
     if (localDateTime.isUtc) throw ArgumentError('localDateTime must not be in UTC');
 final localDateTimeSerialized = localDateTime.toIso8601String();
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'localDateTimeMethod',
+        'MyTestModule_localDateTimeMethod',
         [localDateTimeSerialized],
     );
 
@@ -305,7 +320,7 @@ final localDateTimeSerialized = localDateTime.toIso8601String();
 Future<TimeOfDay> localTimeMethod(TimeOfDay localTime) async {
     final localTimeSerialized = "${localTime.hour.toString().padLeft(2, '0')}:${localTime.minute.toString().padLeft(2, '0')}";
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'localTimeMethod',
+        'MyTestModule_localTimeMethod',
         [localTimeSerialized],
     );
 
@@ -321,7 +336,7 @@ Future<DateTime> localDateMethod(DateTime localDate) async {
     if (localDate.isUtc) throw ArgumentError('localDate must not be in UTC');
 final localDateSerialized = localDate.toIso8601String().split('T').first;
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'localDateMethod',
+        'MyTestModule_localDateMethod',
         [localDateSerialized],
     );
 
@@ -336,7 +351,7 @@ final localDateSerialized = localDate.toIso8601String().split('T').first;
 Future<Duration> durationMethod(Duration duration) async {
     final durationSerialized = duration.toIso8601String();
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'durationMethod',
+        'MyTestModule_durationMethod',
         [durationSerialized],
     );
 
@@ -352,7 +367,7 @@ Future<DateTime> instantMethod(DateTime instant) async {
     if (!instant.isUtc) throw ArgumentError('instant must be in UTC');
 final instantSerialized = instant.toIso8601String();
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'instantMethod',
+        'MyTestModule_instantMethod',
         [instantSerialized],
     );
 
@@ -367,7 +382,7 @@ final instantSerialized = instant.toIso8601String();
 Future<List<String>> stringListMethod(List<String> list) async {
     final listSerialized = jsonEncode(list.map((e) => e).toList());
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'stringListMethod',
+        'MyTestModule_stringListMethod',
         [listSerialized],
     );
 
@@ -384,7 +399,7 @@ return element as String;
 Future<List<List<String>>> nestedListMethod(List<List<String>> list) async {
     final listSerialized = jsonEncode(list.map((e) => e.map((e) => e).toList()).toList());
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'nestedListMethod',
+        'MyTestModule_nestedListMethod',
         [listSerialized],
     );
 
@@ -403,7 +418,7 @@ return element as String;
 Future<List<MyDataClass>> dataClassListMethod(List<MyDataClass> list) async {
     final listSerialized = jsonEncode(list.map((e) => e).toList());
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'dataClassListMethod',
+        'MyTestModule_dataClassListMethod',
         [listSerialized],
     );
 
@@ -420,7 +435,7 @@ return MyDataClass.fromJson(element);
 Future<List<List<MyDataClass>>> nestedDataClassListMethod(List<List<MyDataClass>> list) async {
     final listSerialized = jsonEncode(list.map((e) => e.map((e) => e).toList()).toList());
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'nestedDataClassListMethod',
+        'MyTestModule_nestedDataClassListMethod',
         [listSerialized],
     );
 
@@ -439,7 +454,7 @@ return MyDataClass.fromJson(element);
 Future<Map<String, int>> mapMethod(Map<String, int> map) async {
     final mapSerialized = jsonEncode(map.map((k, v) => MapEntry(k, v)));
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'mapMethod',
+        'MyTestModule_mapMethod',
         [mapSerialized],
     );
 
@@ -456,7 +471,7 @@ return MapEntry(key, value as int);
 Future<MyDataObject> objectMethod(MyDataObject obj) async {
     final objSerialized = jsonEncode(obj.toJson());
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'objectMethod',
+        'MyTestModule_objectMethod',
         [objSerialized],
     );
 
@@ -471,7 +486,7 @@ Future<MyDataObject> objectMethod(MyDataObject obj) async {
 Future<MySealedData> sealedMethod(MySealedData obj) async {
     final objSerialized = jsonEncode(MySealedData.toJson(obj));
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'sealedMethod',
+        'MyTestModule_sealedMethod',
         [objSerialized],
     );
 
@@ -486,7 +501,7 @@ Future<MySealedData> sealedMethod(MySealedData obj) async {
 Future<MyDateClass> dateClassMethod(MyDateClass obj) async {
     final objSerialized = jsonEncode(obj.toJson());
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'dateClassMethod',
+        'MyTestModule_dateClassMethod',
         [objSerialized],
     );
 
@@ -501,7 +516,7 @@ Future<MyDateClass> dateClassMethod(MyDateClass obj) async {
 Future<MySealedDataWithProps> sealedWithPropsMethod(MySealedDataWithProps obj) async {
     final objSerialized = jsonEncode(MySealedDataWithProps.toJson(obj));
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'sealedWithPropsMethod',
+        'MyTestModule_sealedWithPropsMethod',
         [objSerialized],
     );
 
@@ -516,7 +531,7 @@ Future<MySealedDataWithProps> sealedWithPropsMethod(MySealedDataWithProps obj) a
 Future<MyDataClassWithSealed> classWithSealedPropMethod(MyDataClassWithSealed obj) async {
     final objSerialized = jsonEncode(obj.toJson());
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'classWithSealedPropMethod',
+        'MyTestModule_classWithSealedPropMethod',
         [objSerialized],
     );
 
@@ -531,7 +546,7 @@ Future<MyDataClassWithSealed> classWithSealedPropMethod(MyDataClassWithSealed ob
 Future<MyEnum> enumMethod(MyEnum entry) async {
     final entrySerialized = jsonEncode(entry.name);;
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'enumMethod',
+        'MyTestModule_enumMethod',
         [entrySerialized],
     );
 
@@ -546,7 +561,7 @@ Future<MyEnum> enumMethod(MyEnum entry) async {
 Future<List<MyEnum>> enumListMethod(List<MyEnum> entries) async {
     final entriesSerialized = jsonEncode(entries.map((e) => e.name).toList());
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'enumListMethod',
+        'MyTestModule_enumListMethod',
         [entriesSerialized],
     );
 
@@ -563,7 +578,7 @@ return MyEnum.values.byName(element);
 Future<Map<String, MyEnum>> enumMapMethod(Map<String, MyEnum> entries) async {
     final entriesSerialized = jsonEncode(entries.map((k, v) => MapEntry(k, v.name)));
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'enumMapMethod',
+        'MyTestModule_enumMapMethod',
         [entriesSerialized],
     );
 
@@ -580,7 +595,7 @@ return MapEntry(key, MyEnum.values.byName(value));
 Future<Map<String, List<Map<String, MyDataClass>>>> mixedMethod(Map<String, List<Map<String, MyDataClass>>> map) async {
     final mapSerialized = jsonEncode(map.map((k, v) => MapEntry(k, v.map((e) => e.map((k, v) => MapEntry(k, v))).toList())));
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'mixedMethod',
+        'MyTestModule_mixedMethod',
         [mapSerialized],
     );
 
@@ -601,7 +616,7 @@ return MapEntry(key, MyDataClass.fromJson(value));
 Future<MyDataClass> dataClassMethod(MyDataClass data) async {
     final dataSerialized = jsonEncode(data.toJson());
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'dataClassMethod',
+        'MyTestModule_dataClassMethod',
         [dataSerialized],
     );
 
@@ -615,12 +630,12 @@ Future<MyDataClass> dataClassMethod(MyDataClass data) async {
 }
 Future<void> suspendUnitMethod() async {
     
-    await methodChannelToNative.invokeMethod<void>('suspendUnitMethod', []);
+    await methodChannelToNative.invokeMethod<void>('MyTestModule_suspendUnitMethod', []);
 }
 Future<String> suspendStringMethod() async {
     
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'suspendStringMethod',
+        'MyTestModule_suspendStringMethod',
         [],
     );
 

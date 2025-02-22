@@ -65,6 +65,9 @@ class MyTestModule(coroutineScope: CoroutineScope) {
     fun boolMethod(value: Boolean): Boolean = value
 
     @FlutterMethod
+    fun methodWithSameNameAsInOtherModule(value: String): String = value
+
+    @FlutterMethod
     fun parameterizedMethod(
         a: String,
         b: Int,
@@ -240,6 +243,9 @@ class MySecondTestModule(coroutineScope: CoroutineScope) {
 
     @FlutterMethod
     fun testMethod(): String = "Hello from Kotlin!!!"
+
+    @FlutterMethod
+    fun methodWithSameNameAsInOtherModule(value: Int): Int = value
 
     @FlutterFlow
     val intEvents: Flow<Int> = _intState

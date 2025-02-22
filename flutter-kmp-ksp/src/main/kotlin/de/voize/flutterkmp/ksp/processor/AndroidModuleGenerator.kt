@@ -94,10 +94,18 @@ class AndroidModuleGenerator {
                         CodeBlock.builder().apply {
                             beginControlFlow("when (call.method)")
                             flutterModule.flutterMethods.forEach { method ->
-                                addMethodCodeBlock(method, wrappedModuleVarName)
+                                addMethodCodeBlock(
+                                    method = method,
+                                    moduleName = flutterModule.moduleName,
+                                    wrappedModuleVarName = wrappedModuleVarName,
+                                )
                             }
                             flutterModule.flutterStateFlows.forEach { stateFlow ->
-                                addStateFlowCodeBlock(stateFlow, wrappedModuleVarName)
+                                addStateFlowCodeBlock(
+                                    stateFlow = stateFlow,
+                                    moduleName = flutterModule.moduleName,
+                                    wrappedModuleVarName = wrappedModuleVarName,
+                                )
                             }
                             addStatement("else -> result.notImplemented()")
                             endControlFlow()
@@ -115,119 +123,6 @@ class AndroidModuleGenerator {
         fileSpec.writeTo(codeGenerator, false)
     }
 
-    /**
-     * ```
-     * "myFlow" -> {
-     *      val arguments = call.arguments as List<*>
-     *      val previous = arguments[0] as Int
-     *
-     *      CoroutineScope(Dispatchers.Default).launch {
-     *          val next = wrappedModule.counter.first {
-     *              it != previous
-     *          }
-     *          result.success(next)
-     *      }
-     * }
-     * ```
-     */
-    private fun CodeBlock.Builder.addStateFlowCodeBlock(
-        stateFlow: KSDeclaration,
-        wrappedModuleVarName: String,
-        resultStatement: (resultParameter: String) -> String = { "result.success($it)" },
-    ) {
-        val flowTypeArgument = stateFlow.getStateFlowDeclarationFlowTypeArgument()
-        val parameters = when (stateFlow) {
-            is KSPropertyDeclaration -> emptyList()
-            is KSFunctionDeclaration -> stateFlow.parameters
-            else -> error("only property and function declaration allowed for @FlutterStateFlow")
-        }
-
-        beginControlFlow("%S ->", stateFlow.simpleName.asString())
-
-        addStatement("val arguments = call.arguments as List<*>")
-
-        if (
-            flowTypeArgument.declaration.requiresSerialization() ||
-            listOf(
-                "kotlinx.datetime.Instant",
-                "kotlinx.datetime.LocalDateTime",
-                "kotlinx.datetime.LocalDate",
-                "kotlinx.datetime.LocalTime",
-                "kotlin.time.Duration",
-            ).contains(flowTypeArgument.declaration.qualifiedName?.asString())
-        ) {
-            addStatement("val previous = arguments[0] as String?")
-        } else {
-            addStatement(
-                "val previous = arguments[0] as %T",
-                flowTypeArgument.makeNullable().toTypeName(),
-            )
-        }
-
-        parameters.forEachIndexed { index, parameter ->
-            getKotlinDeserialization(
-                parameter.type.resolve(),
-                "arguments[${index + 1}]",
-                "param$index",
-            )
-        }
-
-        beginControlFlow(
-            "%T(%T.Default).%M",
-            CoroutineScope,
-            Dispatchers,
-            launch,
-        )
-
-        if (flowTypeArgument.declaration.requiresSerialization()) {
-            addStatement("val json = %T { encodeDefaults = true }", JsonClassName)
-        }
-
-        when (stateFlow) {
-            is KSPropertyDeclaration -> beginControlFlow(
-                "val next = %N.%L.%M",
-                wrappedModuleVarName,
-                stateFlow.simpleName.asString(),
-                first,
-            )
-            is KSFunctionDeclaration -> beginControlFlow(
-                "val next = %N.%L(%L).%M",
-                wrappedModuleVarName,
-                stateFlow.simpleName.asString(),
-                List(parameters.size) { index -> "param$index" }.joinToString(", "),
-                first,
-            )
-            else -> error("only property and function declaration allowed for @FlutterStateFlow")
-        }
-
-        if (flowTypeArgument.declaration.requiresSerialization()) {
-            addStatement("%L.encodeToString(it) != previous", "json")
-        }else if (
-            listOf(
-                "kotlinx.datetime.Instant",
-                "kotlinx.datetime.LocalDateTime",
-                "kotlinx.datetime.LocalDate",
-                "kotlinx.datetime.LocalTime",
-                "kotlin.time.Duration",
-            ).contains(flowTypeArgument.declaration.qualifiedName?.asString())
-        ) {
-            addStatement("%T.encodeToString(it) != previous", JsonClassName)
-        } else {
-            addStatement("it != previous")
-        }
-        endControlFlow()
-
-        getKotlinSerialization(
-            flowTypeArgument.declaration,
-            "next",
-            "serializedNext",
-            "json"
-        )
-        addStatement(resultStatement("serializedNext"))
-
-        endControlFlow()
-        endControlFlow()
-    }
 }
 
 private val MethodCallHandler = ClassName("io.flutter.plugin.common.MethodChannel", "MethodCallHandler")

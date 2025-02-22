@@ -20,12 +20,27 @@ final Stream<MyDataClass> dataClassEvents = const EventChannel('MySecondTestModu
   Future<String> testMethod() async {
     
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
-        'testMethod',
+        'MySecondTestModule_testMethod',
         [],
     );
 
     if (invokeResult == null) {
         throw PlatformException(code: '1', message: 'Method testMethod failed');
+    }
+
+    final result = invokeResult;
+
+    return result;
+}
+Future<int> methodWithSameNameAsInOtherModule(int value) async {
+    
+    final invokeResult = await methodChannelToNative.invokeMethod<int>(
+        'MySecondTestModule_methodWithSameNameAsInOtherModule',
+        [value],
+    );
+
+    if (invokeResult == null) {
+        throw PlatformException(code: '1', message: 'Method methodWithSameNameAsInOtherModule failed');
     }
 
     final result = invokeResult;

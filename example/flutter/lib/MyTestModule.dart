@@ -349,7 +349,16 @@ final localDateSerialized = localDate.toIso8601String().split('T').first;
     return result;
 }
 Future<Duration> durationMethod(Duration duration) async {
-    final durationSerialized = duration.toIso8601String();
+    final durationSerialized = duration.toIso8601String().replaceFirstMapped(RegExp(r'P([^T]*)(T.*)?'), (m) {
+        int totalDays = 0;
+        String datePart = m[1]!
+          .replaceAllMapped(RegExp(r'(\d+)Y'), (y) { totalDays += int.parse(y[1]!) * 365; return ''; })
+          .replaceAllMapped(RegExp(r'(\d+)M'), (m) { totalDays += int.parse(m[1]!) * 30; return ''; })
+          .replaceAllMapped(RegExp(r'(\d+)W'), (w) { totalDays += int.parse(w[1]!) * 7; return ''; })
+          .replaceAllMapped(RegExp(r'(\d+)D'), (d) { totalDays += int.parse(d[1]!); return ''; });
+
+        return 'P' + (totalDays > 0 ? '${totalDays}D' : '') + (m[2] ?? '');
+    });
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
         'MyTestModule_durationMethod',
         [durationSerialized],

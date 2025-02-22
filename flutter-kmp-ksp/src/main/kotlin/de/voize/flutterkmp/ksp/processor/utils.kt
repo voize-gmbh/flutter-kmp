@@ -346,7 +346,7 @@ internal fun DartType.getDartSerializationStatement(varName: String): String? {
             is DartType.Primitive.Int,
             is DartType.Primitive.String -> return null
         }
-        is DartType.Duration -> "${varName}.toIso8601String()"
+        is DartType.Duration -> "${varName}.toIso8601String().$patchIso8601DurationStringDartCode"
         is DartType.TimeOfDay -> "\"${'$'}{$varName.hour.toString().padLeft(2, '0')}:${'$'}{$varName.minute.toString().padLeft(2, '0')}\""
         is DartType.LocalDate -> "${varName}.toIso8601String().split('T').first"
         is DartType.DateTime, is DartType.LocalDateTime -> "$varName.toIso8601String()"
@@ -363,3 +363,22 @@ internal fun DartType.getDartSerializationStatement(varName: String): String? {
         is DartType.Map -> "jsonEncode(${transformEnumsForSerialization(varName, this)})"
     } + ";"
 }
+
+/**
+ * The Pub package we use to parse Dart Durations to ISO-8601 strings, [iso_duration](https://github.com/pti/iso_duration),
+ * uses W, M, Y for day designators, which are not supported in kotlin.time.Duration ISO-8601 string parsing,
+ * see [here](https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.time/-duration/-companion/parse-iso-string.html).
+ *
+ * This code runs as an extension on a "x.toIso8601String()" call to patch
+ * the ISO-8601 duration string to use D instead of W, M, Y with W=7D, M=30D, Y=365D.
+ */
+internal const val patchIso8601DurationStringDartCode = """replaceFirstMapped(RegExp(r'P([^T]*)(T.*)?'), (m) {
+        int totalDays = 0;
+        String datePart = m[1]!
+          .replaceAllMapped(RegExp(r'(\d+)Y'), (y) { totalDays += int.parse(y[1]!) * 365; return ''; })
+          .replaceAllMapped(RegExp(r'(\d+)M'), (m) { totalDays += int.parse(m[1]!) * 30; return ''; })
+          .replaceAllMapped(RegExp(r'(\d+)W'), (w) { totalDays += int.parse(w[1]!) * 7; return ''; })
+          .replaceAllMapped(RegExp(r'(\d+)D'), (d) { totalDays += int.parse(d[1]!); return ''; });
+
+        return 'P' + (totalDays > 0 ? '${"$"}{totalDays}D' : '') + (m[2] ?? '');
+    })"""

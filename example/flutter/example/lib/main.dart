@@ -139,12 +139,20 @@ class _MyAppState extends State<MyApp> {
     print(await myTestModule.localDateMethod(DateTime.now()));
     print(await myTestModule.localTimeMethod(TimeOfDay.now()));
     print(await myTestModule.durationMethod(const Duration(seconds: 123)));
+    print(await myTestModule.durationMethod(const Duration(days: 1000)));
 
     print(await myTestModule.dateClassMethod(MyDateClass(
         DateTime.now(),
         TimeOfDay.now(),
         DateTime.now(),
         const Duration(seconds: 123),
+        DateTime.now().toUtc())));
+
+    print(await myTestModule.dateClassMethod(MyDateClass(
+        DateTime.now(),
+        TimeOfDay.now(),
+        DateTime.now(),
+        const Duration(days: 1000),
         DateTime.now().toUtc())));
 
     final broadcaster = myTestModule.intEvents;

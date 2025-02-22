@@ -3,6 +3,7 @@
 ## unreleased
 
 - Fix conflicts with same method names across different modules on iOS by prefixing method names
+- Update Dart duration serialization to be compatible with Kotlin ISO-8601 duration string parsing
 
 ## v0.1.0-rc.2
 

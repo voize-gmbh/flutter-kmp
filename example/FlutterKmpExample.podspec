@@ -8,8 +8,8 @@ Pod::Spec.new do |spec|
     spec.summary                  = 'Shared Kotlin code for flutter-kmp example'
     spec.vendored_frameworks      = 'build/cocoapods/framework/flutterkmpexample.framework'
     spec.libraries                = 'c++'
-    spec.ios.deployment_target    = '11.0'
-    spec.dependency 'Flutter'
+                
+                
                 
     if !Dir.exist?('build/cocoapods/framework/flutterkmpexample.framework') || Dir.empty?('build/cocoapods/framework/flutterkmpexample.framework')
         raise "

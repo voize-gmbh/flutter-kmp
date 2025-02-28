@@ -32,7 +32,10 @@ pod 'FlutterKmpExample', :path => '../../../FlutterKmpExample.podspec'
 flutter_ios_podfile_setup
 
 target 'Runner' do
-  use_frameworks!
+  # use_frameworks needs to be disabled because the KMP project produces a static library.
+  # Otherwise you get the following error:
+  #   [!] The 'Pods-Runner' target has transitive dependencies that include statically linked binaries
+  # use_frameworks!
   use_modular_headers!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))

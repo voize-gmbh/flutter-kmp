@@ -3,8 +3,7 @@ PODS:
   - flutter_kmp_example (0.0.1):
     - Flutter
     - FlutterKmpExample
-  - FlutterKmpExample (0.1.0):
-    - Flutter
+  - FlutterKmpExample (0.1.0)
   - integration_test (0.0.1):
     - Flutter
 
@@ -27,9 +26,9 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
   flutter_kmp_example: cef86282548c3343df655b50da93fb23981c5cfd
-  FlutterKmpExample: 602f302c485b58e590be3d655f462b4962cdc4e3
+  FlutterKmpExample: 353b38380378eaf5b71cee500a84dae03fa23f7d
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
 
-PODFILE CHECKSUM: 53af147c3b0053711becea2df6d246d410fe58ba
+PODFILE CHECKSUM: f0f94c29f034beaf74fec4fb487a5217cd1d58cc
 
 COCOAPODS: 1.16.2

@@ -2,6 +2,8 @@
 
 ## unreleased
 
+- Use cinterop with stub headers instead of Flutter cocoapod dependency
+
 ## v0.1.0-rc.3
 
 - Fix conflicts with same method names across different modules on iOS by prefixing method names

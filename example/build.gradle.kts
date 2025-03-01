@@ -33,10 +33,6 @@ kotlin {
             homepage = "https://github.com/voize-gmbh/flutter-kmp"
             summary = "Shared Kotlin code for flutter-kmp example"
             baseName = "flutterkmpexample"
-
-            // without setting the framework to static, you will get errors during linking
-            // that symbols e.g. for _OBJC_CLASS_$_FlutterError are missing
-            isStatic = true
         }
     }
 

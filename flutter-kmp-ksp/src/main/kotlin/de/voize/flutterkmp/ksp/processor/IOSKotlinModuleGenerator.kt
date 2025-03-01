@@ -1,19 +1,19 @@
 package de.voize.flutterkmp.ksp.processor
 
 import com.google.devtools.ksp.processing.CodeGenerator
-import com.google.devtools.ksp.symbol.KSDeclaration
-import com.google.devtools.ksp.symbol.KSFunctionDeclaration
-import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSValueParameter
+import com.squareup.kotlinpoet.ANY
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.LambdaTypeName
 import com.squareup.kotlinpoet.MemberName
+import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.STRING
 import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
 
 class IOSKotlinModuleGenerator {
@@ -29,8 +29,11 @@ class IOSKotlinModuleGenerator {
         val wrappedClassName = flutterModule.wrappedClassDeclaration.simpleName.asString()
         val className = wrappedClassName.iosModuleClassName()
         val wrappedModuleVarName = "wrappedModule"
-        val pluginInstanceConstructorArgName = "pluginInstance"
         val registrarConstructorArgName = "registrar"
+        val pluginInstanceConstructorArgName = "pluginInstance"
+        val createMethodChannelArgName = "createMethodChannel"
+        val createEventChannelArgName = "createEventChannel"
+        val createFlutterErrorArgName = "createFlutterError"
         val methodChannelVarName = "methodChannel"
 
         val classSpec = TypeSpec.classBuilder(className).apply {
@@ -56,14 +59,45 @@ class IOSKotlinModuleGenerator {
                         FlutterPluginRegistrar,
                     )
                     .addParameter(pluginInstanceConstructorArgName, FlutterPlugin)
+                    .addParameter(
+                        createMethodChannelArgName,
+                        LambdaTypeName.get(
+                            parameters = listOf(
+                                ParameterSpec("name", STRING),
+                                ParameterSpec("binaryMessenger", NSObject),
+                            ),
+                            returnType = FlutterMethodChannel,
+                        )
+                    )
+                    .addParameter(
+                        createEventChannelArgName,
+                        LambdaTypeName.get(
+                            parameters = listOf(
+                                ParameterSpec("name", STRING),
+                                ParameterSpec("binaryMessenger", NSObject),
+                            ),
+                            returnType = FlutterEventChannel,
+                        )
+                    )
+                    .addParameter(
+                        createFlutterErrorArgName,
+                        LambdaTypeName.get(
+                            parameters = listOf(
+                                ParameterSpec("code", STRING),
+                                ParameterSpec("message", STRING.copy(nullable = true)),
+                                ParameterSpec("details", ANY.copy(nullable = true)),
+                            ),
+                            returnType = FlutterError,
+                        )
+                    )
                     .addCode(
                         CodeBlock.builder().apply {
                             addStatement(
-                                "val $methodChannelVarName = %T(%S, %L, %T.sharedInstance())",
-                                FlutterMethodChannel,
+                                "val $methodChannelVarName = %L(%S, %L ?: error(%S))",
+                                createMethodChannelArgName,
                                 flutterModule.moduleName,
                                 "$registrarConstructorArgName.messenger()",
-                                FlutterStandardMethodCodec
+                                "$registrarConstructorArgName.messenger() is null"
                             )
                             addStatement(
                                 "%L.addMethodCallDelegate(%L as %T, %L)",
@@ -74,14 +108,15 @@ class IOSKotlinModuleGenerator {
                             )
                             flutterModule.flutterFlows.forEach {
                                 addStatement(
-                                    "%T(%S, %L, %T.sharedInstance()).setStreamHandler(%N.%M.%M())",
-                                    FlutterEventChannel,
+                                    "%L(%S, %L ?: error(%S)).setStreamHandler(%N.%M.%M(%L))",
+                                    createEventChannelArgName,
                                     "${flutterModule.moduleName}_${it.simpleName.asString()}",
                                     "$registrarConstructorArgName.messenger()",
-                                    FlutterStandardMethodCodec,
+                                    "$registrarConstructorArgName.messenger() is null",
                                     wrappedModuleVarName,
                                     MemberName(packageName, it.simpleName.asString()),
                                     toEventStreamHandler,
+                                    createFlutterErrorArgName,
                                 )
                             }
                         }.build()
@@ -142,7 +177,7 @@ private val FlutterResult = ClassName("flutter", "FlutterResult")
 private val FlutterMethodCall = ClassName("flutter", "FlutterMethodCall")
 private val FlutterMethodChannel = ClassName("flutter", "FlutterMethodChannel")
 private val FlutterEventChannel = ClassName("flutter", "FlutterEventChannel")
+private val FlutterError = ClassName("flutter", "FlutterError")
 private val FlutterPluginRegistrar = ClassName("flutter", "FlutterPluginRegistrarProtocol")
 private val FlutterPlugin = ClassName("flutter", "FlutterPluginProtocol")
-private val FlutterStandardMethodCodec = ClassName("flutter", "FlutterStandardMethodCodec")
 private val toEventStreamHandler = MemberName(flutterKmpPackageName, "toEventStreamHandler")

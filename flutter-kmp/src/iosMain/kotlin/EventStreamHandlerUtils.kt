@@ -13,10 +13,15 @@ import flutter.FlutterStreamHandlerProtocol
 import flutter.FlutterEventSink
 import flutter.FlutterError
 
-inline fun <reified T> Flow<T>.toEventStreamHandler(): NSObject =
-    toEventStreamHandler(serializer<T>())
+typealias CreateFlutterError = (code: String, message: String?, details: Any?) -> FlutterError
 
-fun <T> Flow<T>.toEventStreamHandler(serializer: SerializationStrategy<T>): NSObject {
+inline fun <reified T> Flow<T>.toEventStreamHandler(noinline createFlutterError: CreateFlutterError): NSObject =
+    toEventStreamHandler(serializer<T>(), createFlutterError)
+
+fun <T> Flow<T>.toEventStreamHandler(
+    serializer: SerializationStrategy<T>,
+    createFlutterError: CreateFlutterError,
+): NSObject {
     return object : FlutterStreamHandlerProtocol, NSObject() {
         var job: Job? = null
 
@@ -25,7 +30,7 @@ fun <T> Flow<T>.toEventStreamHandler(serializer: SerializationStrategy<T>): NSOb
             eventSink: FlutterEventSink,
         ): FlutterError? {
             if (eventSink == null) {
-                return FlutterError.errorWithCode("no_event_sink", "No event sink available", null)
+                return createFlutterError("no_event_sink", "No event sink available", null)
             }
 
             job = CoroutineScope(Dispatchers.Default).launch {

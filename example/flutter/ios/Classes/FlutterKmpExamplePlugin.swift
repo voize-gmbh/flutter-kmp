@@ -13,6 +13,15 @@ public class FlutterKmpExamplePlugin: NSObject, FlutterPlugin {
   }
     
   public static func register(with registrar: FlutterPluginRegistrar) {
+    let createMethodChannel = { (name: String, binaryMessenger: NSObject) in
+      FlutterMethodChannel(name: name, binaryMessenger: binaryMessenger as! FlutterBinaryMessenger)
+    }
+    let createEventChannel = { (name: String, binaryMessenger: NSObject) in
+      FlutterEventChannel(name: name, binaryMessenger: binaryMessenger as! FlutterBinaryMessenger)
+    }
+    let createFlutterError = { (code: String, message: String?, details: Any?) in
+      FlutterError(code: code, message: message, details: details)
+    }
     let myTestModule = MyTestModuleIOS(coroutineScope: MyTestModuleKt.SharedCoroutineScope)
     let mySecondTestModule = MySecondTestModuleIOS(coroutineScope: MyTestModuleKt.SharedCoroutineScope)
 
@@ -23,12 +32,18 @@ public class FlutterKmpExamplePlugin: NSObject, FlutterPlugin {
 
     myTestModule.register(
       registrar: registrar,
-      pluginInstance: instance
+      pluginInstance: instance,
+      createMethodChannel: createMethodChannel,
+      createEventChannel: createEventChannel,
+      createFlutterError: createFlutterError
     )
 
     mySecondTestModule.register(
       registrar: registrar,
-      pluginInstance: instance
+      pluginInstance: instance,
+      createMethodChannel: createMethodChannel,
+      createEventChannel: createEventChannel,
+      createFlutterError: createFlutterError
     )
   }
 

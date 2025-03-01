@@ -2,6 +2,8 @@
 
 ## unreleased
 
+- Move calling constructors for FlutterMethodChannel, FlutterEventChannel and FlutterError to plugin code
+
 ## v0.1.0-rc.4
 
 - Use cinterop with stub headers instead of Flutter cocoapod dependency

@@ -553,7 +553,7 @@ Future<MyDataClassWithSealed> classWithSealedPropMethod(MyDataClassWithSealed ob
     return result;
 }
 Future<MyEnum> enumMethod(MyEnum entry) async {
-    final entrySerialized = jsonEncode(entry.name);;
+    final entrySerialized = jsonEncode(entry.name);
     final invokeResult = await methodChannelToNative.invokeMethod<String>(
         'MyTestModule_enumMethod',
         [entrySerialized],
@@ -634,6 +634,66 @@ Future<MyDataClass> dataClassMethod(MyDataClass data) async {
     }
 
     final result = MyDataClass.fromJson(jsonDecode(invokeResult) as Map<String, dynamic>);
+
+    return result;
+}
+Future<MyDataClass?> nullableDataClassMethod(MyDataClass? data) async {
+    final dataSerialized = jsonEncode(data?.toJson());
+    final invokeResult = await methodChannelToNative.invokeMethod<String>(
+        'MyTestModule_nullableDataClassMethod',
+        [dataSerialized],
+    );
+
+    if (invokeResult == null) {
+        throw PlatformException(code: '1', message: 'Method nullableDataClassMethod failed');
+    }
+
+    final result = jsonDecode(invokeResult) == null ? null : MyDataClass.fromJson(jsonDecode(invokeResult) as Map<String, dynamic>);
+
+    return result;
+}
+Future<MyEnum?> nullableEnumClassMethod(MyEnum? data) async {
+    final dataSerialized = jsonEncode(data?.name);
+    final invokeResult = await methodChannelToNative.invokeMethod<String>(
+        'MyTestModule_nullableEnumClassMethod',
+        [dataSerialized],
+    );
+
+    if (invokeResult == null) {
+        throw PlatformException(code: '1', message: 'Method nullableEnumClassMethod failed');
+    }
+
+    final result = jsonDecode(invokeResult) == null ? null : MyEnum.values.byName(jsonDecode(invokeResult));
+
+    return result;
+}
+Future<MySealedData?> nullableSealedClassMethod(MySealedData? data) async {
+    final dataSerialized = data == null ? jsonEncode(null) : jsonEncode(MySealedData.toJson(data));
+    final invokeResult = await methodChannelToNative.invokeMethod<String>(
+        'MyTestModule_nullableSealedClassMethod',
+        [dataSerialized],
+    );
+
+    if (invokeResult == null) {
+        throw PlatformException(code: '1', message: 'Method nullableSealedClassMethod failed');
+    }
+
+    final result = jsonDecode(invokeResult) == null ? null : MySealedData.fromJson(jsonDecode(invokeResult));
+
+    return result;
+}
+Future<MyDataObject?> nullableObjectMethod(MyDataObject? data) async {
+    final dataSerialized = jsonEncode(data?.toJson());
+    final invokeResult = await methodChannelToNative.invokeMethod<String>(
+        'MyTestModule_nullableObjectMethod',
+        [dataSerialized],
+    );
+
+    if (invokeResult == null) {
+        throw PlatformException(code: '1', message: 'Method nullableObjectMethod failed');
+    }
+
+    final result = jsonDecode(invokeResult) == null ? null : MyDataObject.fromJson(jsonDecode(invokeResult) as Map<String, dynamic>);
 
     return result;
 }

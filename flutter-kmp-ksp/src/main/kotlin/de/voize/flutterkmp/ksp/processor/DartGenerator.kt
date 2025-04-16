@@ -2,9 +2,10 @@ package de.voize.flutterkmp.ksp.processor
 
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
+import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.*
 
-class DartGenerator(private val codeGenerator: CodeGenerator) {
+class DartGenerator(private val codeGenerator: CodeGenerator, private val logger: KSPLogger) {
 
     /**
      * For a flow property annotated with @FlutterFlow we generate a property
@@ -195,7 +196,9 @@ Future<void> ${methodName}($dartParameterListString) async {
                 "String"
             } else returnType.toTypeName()
 
-            if (returnTypeNotNull.isMarkedNullable) {
+            // serializable types always return a non-nullable string
+            // even when the return type is nullable as it translates to the string "null"
+            if (returnTypeNotNull.isMarkedNullable && !returnType.requiresSerialization()) {
 """
 Future<$returnTypeName> ${methodName}($dartParameterListString) async {
     ${serializationStatements.joinToString("\n")}

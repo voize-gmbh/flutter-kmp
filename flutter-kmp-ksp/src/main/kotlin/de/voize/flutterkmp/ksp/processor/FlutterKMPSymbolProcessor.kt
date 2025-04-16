@@ -167,7 +167,7 @@ class FlutterKMPSymbolProcessor(
         }
 
         if (!invoked && JvmPlatform in platformNames && NativePlatform in platformNames) {
-            DartGenerator(codeGenerator).generate(flutterModules)
+            DartGenerator(codeGenerator, logger).generate(flutterModules)
         }
 
         invoked = true

@@ -291,11 +291,23 @@ internal fun DartType.getDartDeserializationStatement(varName: String, deseriali
     is DartType.Duration -> "parseIso8601Duration($varName)"
     is DartType.TimeOfDay -> "TimeOfDay.fromDateTime(DateTime.parse(\"1998-01-01T${'$'}$varName:00.000\"))"
     is DartType.Class -> if (declaration.modifiers.contains(Modifier.SEALED)) {
-        "${this.toTypeName()}.fromJson(jsonDecode($varName))"
+        if (this.isNullable) {
+            "jsonDecode($varName) == null ? null : ${this.name}.fromJson(jsonDecode($varName))"
+        } else {
+            "${this.name}.fromJson(jsonDecode($varName))"
+        }
     } else if (declaration.classKind == ClassKind.ENUM_CLASS) {
-        "${this.toTypeName()}.values.byName(jsonDecode($varName))"
+        if (this.isNullable) {
+            "jsonDecode($varName) == null ? null : ${this.name}.values.byName(jsonDecode($varName))"
+        } else {
+            "${this.name}.values.byName(jsonDecode($varName))"
+        }
     } else {
-        "${this.toTypeName()}.fromJson(jsonDecode($varName) as Map<String, dynamic>)"
+        if (this.isNullable) {
+            "jsonDecode($varName) == null ? null : ${this.name}.fromJson(jsonDecode($varName) as Map<String, dynamic>)"
+        } else {
+            "${this.name}.fromJson(jsonDecode($varName) as Map<String, dynamic>)"
+        }
     }
     is DartType.List -> """
 (jsonDecode($varName) as List<dynamic>).map((element) {
@@ -352,11 +364,15 @@ internal fun DartType.getDartSerializationStatement(varName: String): String? {
         is DartType.DateTime, is DartType.LocalDateTime -> "$varName.toIso8601String()"
         is DartType.Class -> {
             if (declaration.modifiers.contains(Modifier.SEALED)) {
-                "jsonEncode(${toTypeName()}.toJson(${varName}))"
+                if (isNullable) {
+                    "$varName == null ? jsonEncode(null) : jsonEncode($name.toJson(${varName}))"
+                } else {
+                    "jsonEncode($name.toJson(${varName}))"
+                }
             } else if (declaration.classKind == ClassKind.ENUM_CLASS) {
-                "jsonEncode(${varName}.name);"
+                "jsonEncode(${varName}${if (isNullable) "?" else ""}.name)"
             } else {
-                "jsonEncode(${varName}.toJson())"
+                "jsonEncode(${varName}${if (isNullable) "?" else ""}.toJson())"
             }
         }
         is DartType.List -> "jsonEncode(${transformEnumsForSerialization(varName, this)})"

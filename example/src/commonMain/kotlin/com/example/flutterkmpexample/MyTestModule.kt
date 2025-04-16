@@ -188,6 +188,18 @@ class MyTestModule(coroutineScope: CoroutineScope) {
             ),
         )
     }
+
+    @FlutterMethod
+    fun nullableDataClassMethod(data: MyDataClass?): MyDataClass? = data
+
+    @FlutterMethod
+    fun nullableEnumClassMethod(data: MyEnum?): MyEnum? = data
+
+    @FlutterMethod
+    fun nullableSealedClassMethod(data: MySealedData?): MySealedData? = data
+
+    @FlutterMethod
+    fun nullableObjectMethod(data: MyDataObject?): MyDataObject? = data
     
     @FlutterMethod
     suspend fun suspendUnitMethod() {

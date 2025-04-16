@@ -2,6 +2,8 @@
 
 ## unreleased
 
+- Fix generated serialization and deserialization for nullable class type parameters
+
 ## v0.1.0-rc.5
 
 - Move calling constructors for FlutterMethodChannel, FlutterEventChannel and FlutterError to plugin code

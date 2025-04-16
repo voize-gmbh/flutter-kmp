@@ -83,8 +83,12 @@ class _MyAppState extends State<MyApp> {
     await myTestModule.suspendUnitMethod();
     print(await myTestModule.suspendStringMethod());
     final result = await myTestModule.dataClassMethod(data);
-
     print(result.stringProp);
+
+    print(await myTestModule.nullableDataClassMethod(null));
+    print(await myTestModule.nullableEnumClassMethod(null));
+    print(await myTestModule.nullableObjectMethod(null));
+    print(await myTestModule.nullableSealedClassMethod(null));
 
     print(await myTestModule.stringListMethod(["hello", "world"]));
     print(await myTestModule.nestedListMethod([
@@ -236,7 +240,7 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('Flutter KMP example app'),
         ),
-        body: Center(
+        body: const Center(
           child: Text('Hello!'),
         ),
       ),

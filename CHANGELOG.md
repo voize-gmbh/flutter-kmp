@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased
+## v0.1.0-rc.6
 
 - Fix generated serialization and deserialization for nullable class type parameters
 

@@ -1,5 +1,7 @@
 # CHANGELOG
 
+- Update Nexus repository URLs for publishing
+
 ## v0.1.0-rc.6
 
 - Fix generated serialization and deserialization for nullable class type parameters

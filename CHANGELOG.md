@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## unreleased
+## v0.1.0
 
 - Update Nexus repository URLs for publishing
 

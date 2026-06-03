@@ -1,10 +1,11 @@
 # CHANGELOG
 
 ## unreleased
+## v0.2.0
 
 - Support Kotlin types coming from compiled dependencies (KSP `Origin.KOTLIN_LIB`), so models from a depended-on SDK module (via `api`/`implementation`) work across the interop boundary:
-  - `requiresSerialization()` now serializes `KOTLIN_LIB` classes in addition to `KOTLIN` ones
-  - `filterTypesForGeneration()` now generates Dart models for `KOTLIN_LIB` types, restricted to the class kinds `toDartType()` can handle (data class, sealed class, enum, object) so stdlib base classes (e.g. `kotlin.Enum`) reached via super-type traversal and unresolved error types do not leak into code generation
+  - `requiresSerialization()` and `filterTypesForGeneration()` now handle `KOTLIN_LIB` types, restricted to the class kinds that are serializable models (data class, sealed class, enum, object). Plain stdlib classes like `kotlin.String`/`kotlin.Int` (also `KOTLIN_LIB`) are intentionally excluded, so the native side does not try to JSON-decode raw primitive values
+  - stdlib base classes (e.g. `kotlin.Enum`) reached via super-type traversal and unresolved error types no longer leak into code generation
 
 ## v0.1.0
 

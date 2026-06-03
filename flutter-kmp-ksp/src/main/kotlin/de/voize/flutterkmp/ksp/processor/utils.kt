@@ -184,10 +184,16 @@ fun KSDeclaration.requiresSerialization(): Boolean {
 
     return qualifiedName?.asString() in types
            || (this is KSClassDeclaration && when (this.classKind) {
-        // KOTLIN_LIB covers Kotlin classes that come from a compiled dependency
-        // (e.g. when the binding module depends on the SDK module via api/implementation).
-        // Both origins represent Kotlin data classes that need JSON serialization.
-        ClassKind.CLASS -> this.origin == Origin.KOTLIN || this.origin == Origin.KOTLIN_LIB
+        // For compiled dependencies (Origin.KOTLIN_LIB) ONLY data/sealed classes are
+        // serializable models. Plain stdlib classes like kotlin.String / kotlin.Int are also
+        // KOTLIN_LIB, so we must NOT mark them as requiring serialization — otherwise the
+        // native side tries to JSON-decode a raw (unquoted) value (e.g. `test`) and aborts
+        // at runtime. This mirrors the KOTLIN_LIB handling in filterTypesForGeneration().
+        ClassKind.CLASS -> when (this.origin) {
+            Origin.KOTLIN -> true
+            Origin.KOTLIN_LIB -> Modifier.DATA in this.modifiers || Modifier.SEALED in this.modifiers
+            else -> false
+        }
                ClassKind.OBJECT -> true
                ClassKind.ENUM_CLASS -> true
                else -> false

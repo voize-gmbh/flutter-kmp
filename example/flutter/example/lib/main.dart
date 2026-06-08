@@ -30,6 +30,94 @@ class _MyAppState extends State<MyApp> {
   late StreamSubscription<MyDataClass> _dataClassEventsSubscription;
   late StreamSubscription<MyDataClass> _secondModuleDataClassEventsSubscription;
 
+  // #18 stress test: repeatedly subscribe/cancel an event channel to surface leaks /
+  // retain cycles in the native FlutterStreamHandler + coroutine job lifecycle.
+  // Profile memory in Flutter DevTools (Memory) or Xcode Instruments while pressing the
+  // button; memory should return to baseline after it finishes.
+  final MyTestModule _stressModule = MyTestModule();
+  String _stressStatus = 'idle';
+
+  Future<void> _runStreamStressTest() async {
+    const iterations = 5000;
+    setState(() => _stressStatus = 'running 0/$iterations');
+    for (var i = 1; i <= iterations; i++) {
+      final sub = _stressModule.intEvents.listen((_) {});
+      await Future.delayed(const Duration(milliseconds: 5));
+      await sub.cancel();
+      if (i % 100 == 0) {
+        setState(() => _stressStatus = 'running $i/$iterations');
+      }
+      if (i % 1000 == 0) {
+        // Brief pause to create a visible step in the Instruments timeline so you can
+        // "Mark Generation" between batches and compare persistent objects per batch.
+        print('stream stress test: checkpoint $i/$iterations');
+        await Future.delayed(const Duration(seconds: 1));
+      }
+    }
+    setState(() => _stressStatus = 'done $iterations cycles');
+    print('stream stress test: done $iterations subscribe/cancel cycles');
+  }
+
+  // Subscribes to a Flow that emits a couple of values and then throws, to verify the
+  // EventStreamHandler error mechanism end-to-end: the values arrive via onData and the
+  // failure must arrive via onError (not a silent stop). Works the same on Android and iOS.
+  StreamSubscription<int>? _failingFlowSubscription;
+  String _failingFlowStatus = 'idle';
+
+  void _runFailingFlowTest() {
+    _failingFlowSubscription?.cancel();
+    setState(() => _failingFlowStatus = 'listening…');
+    _failingFlowSubscription = _stressModule.failingEvents.listen(
+      (value) {
+        print('failingEvents onData: $value');
+        setState(() => _failingFlowStatus = 'onData: $value');
+      },
+      onError: (Object error) {
+        print('failingEvents onError: $error');
+        setState(() => _failingFlowStatus = 'onError: $error');
+      },
+      onDone: () {
+        print('failingEvents onDone');
+        setState(() => _failingFlowStatus = '$_failingFlowStatus (onDone)');
+      },
+    );
+  }
+
+  // Calls a suspend method that throws. Previously this crashed the app; now invokeMethod
+  // should reject with a catchable PlatformException(code: "method_error").
+  String _failingMethodStatus = 'idle';
+
+  Future<void> _runFailingMethodTest() async {
+    setState(() => _failingMethodStatus = 'calling…');
+    try {
+      final result = await _stressModule.failingSuspendMethod();
+      setState(() => _failingMethodStatus = 'returned: $result');
+    } catch (e) {
+      print('failingSuspendMethod caught: $e');
+      setState(() => _failingMethodStatus = 'caught: $e');
+    }
+  }
+
+  // Subscribes to a @FlutterStateFlow that fails mid-collection. First value arrives via
+  // onData, then the error must arrive via onError (not crash the app).
+  StreamSubscription<int?>? _failingStateSubscription;
+  String _failingStateStatus = 'idle';
+
+  void _runFailingStateTest() {
+    _failingStateSubscription?.cancel();
+    setState(() => _failingStateStatus = 'listening…');
+    _failingStateSubscription = _stressModule.failingState(
+      (value) {
+        print('failingState onData: $value');
+        setState(() => _failingStateStatus = 'onData: $value');
+      },
+      onError: (Object error) {
+        print('failingState onError: $error');
+        setState(() => _failingStateStatus = 'onError: $error');
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -230,6 +318,8 @@ class _MyAppState extends State<MyApp> {
     _parameterizedDataClassFlowSubscription.cancel();
     _dataClassEventsSubscription.cancel();
     _secondModuleDataClassEventsSubscription.cancel();
+    _failingFlowSubscription?.cancel();
+    _failingStateSubscription?.cancel();
     super.dispose();
   }
 
@@ -240,8 +330,41 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('Flutter KMP example app'),
         ),
-        body: const Center(
-          child: Text('Hello!'),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('Hello!'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _runStreamStressTest,
+                child: const Text('Run stream stress test'),
+              ),
+              const SizedBox(height: 8),
+              Text('Stress: $_stressStatus'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _runFailingFlowTest,
+                child: const Text('Trigger failing flow'),
+              ),
+              const SizedBox(height: 8),
+              Text('Failing flow: $_failingFlowStatus'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _runFailingMethodTest,
+                child: const Text('Trigger failing suspend method'),
+              ),
+              const SizedBox(height: 8),
+              Text('Failing method: $_failingMethodStatus'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _runFailingStateTest,
+                child: const Text('Trigger failing state flow'),
+              ),
+              const SizedBox(height: 8),
+              Text('Failing state: $_failingStateStatus'),
+            ],
+          ),
         ),
       ),
     );

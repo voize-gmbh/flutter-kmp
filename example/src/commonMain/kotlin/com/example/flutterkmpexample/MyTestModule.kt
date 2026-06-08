@@ -10,6 +10,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
@@ -236,6 +237,36 @@ class MyTestModule(coroutineScope: CoroutineScope) {
 
     @FlutterStateFlow
     fun intStateAdd(num: Int): Flow<Int> = _intStateFlow.map { it + num }
+
+    // Emits a couple of values and then throws, to exercise the EventStreamHandler error
+    // path on both platforms: Dart must receive onError (not a silent stop). Wired to the
+    // "Trigger failing flow" button in the example app.
+    @FlutterFlow
+    val failingEvents: Flow<Int> = flow {
+        emit(1)
+        delay(0.3.seconds)
+        emit(2)
+        delay(0.3.seconds)
+        throw RuntimeException("Intentional failure to test Flow error handling")
+    }
+
+    // A suspend method that fails — exercises the method error path. Previously this threw an
+    // uncaught coroutine exception and crashed the app; now Dart's invokeMethod should throw a
+    // catchable PlatformException(code: "method_error"). Wired to a button in the example app.
+    @FlutterMethod
+    suspend fun failingSuspendMethod(): String {
+        delay(0.3.seconds)
+        throw RuntimeException("Intentional suspend method failure")
+    }
+
+    // A @FlutterStateFlow that fails while collecting — exercises the state-flow error path.
+    // First poll returns 0 (onData), the next collection throws and must arrive as onError.
+    @FlutterStateFlow
+    val failingState: Flow<Int> = flow {
+        emit(0)
+        delay(0.3.seconds)
+        throw RuntimeException("Intentional state flow failure")
+    }
 }
 
 @FlutterModule("MySecondTestModule")
@@ -264,6 +295,38 @@ class MySecondTestModule(coroutineScope: CoroutineScope) {
 
     @FlutterFlow
     val dataClassEvents: Flow<MyDataClass> = _dataClassSharedFlow
+}
+
+// --- Generator edge-case modules (opaque-cinterop / SDK-72 verification) ---
+
+// ONLY @FlutterMethod (no flows): verifies the generated register(...) compiles even though
+// the generated `setUpEventChannel` closure parameter is never used.
+@FlutterModule("MethodsOnlyTestModule")
+class MethodsOnlyTestModule(coroutineScope: CoroutineScope) {
+    @FlutterMethod
+    fun echo(value: String): String = value
+}
+
+// ONLY @FlutterFlow / @FlutterStateFlow (no methods): verifies the generated handleMethodCall
+// (empty `when`, only `else -> false`) and the event-channel wiring compile.
+@FlutterModule("FlowsOnlyTestModule")
+class FlowsOnlyTestModule(coroutineScope: CoroutineScope) {
+    private val _ticks = MutableStateFlow(0)
+
+    init {
+        coroutineScope.launch {
+            while (true) {
+                delay(1.seconds)
+                _ticks.value++
+            }
+        }
+    }
+
+    @FlutterFlow
+    val ticks: Flow<Int> = _ticks
+
+    @FlutterStateFlow
+    val tickState: Flow<Int> = _ticks
 }
 
 @Serializable

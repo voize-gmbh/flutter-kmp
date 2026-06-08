@@ -28,6 +28,7 @@ internal fun CodeBlock.Builder.addMethodCodeBlock(
     moduleName: String,
     wrappedModuleVarName: String,
     resultStatement: (resultParameter: String) -> String = { "result.success($it)" },
+    errorStatement: (errorCode: String, messageExpr: String) -> String = { code, msg -> "result.error(\"$code\", $msg, null)" },
     append: CodeBlock.Builder.() -> Unit = {},
 ) {
     beginControlFlow(
@@ -62,6 +63,35 @@ internal fun CodeBlock.Builder.addMethodCodeBlock(
         endControlFlow()
     }
 
+    // Emits a result/error call. MethodChannel.Result (Android, @UiThread) and the iOS
+    // FlutterResult block must be invoked on the platform (main) thread, so when we are inside
+    // a coroutine on Dispatchers.Default we hop to Main first — mirroring EventStreamHandler.
+    // On the synchronous path (non-suspend methods) we are already on the platform thread.
+    fun emitResultStatement(statement: String, onMain: Boolean) {
+        if (onMain) {
+            beginControlFlow("%M(%T.Main)", withContext, Dispatchers)
+            addStatement(statement)
+            endControlFlow()
+        } else {
+            addStatement(statement)
+        }
+    }
+
+    // Wraps a (possibly suspending) body so that a thrown exception is reported back to
+    // Flutter via the result error channel instead of crashing the host app as an uncaught
+    // coroutine exception. CancellationException is rethrown so normal cancellation is not
+    // reported as an error. The error callback always runs inside a coroutine, so it is
+    // dispatched on Main.
+    fun withErrorHandling(errorCode: String, block: CodeBlock.Builder.() -> Unit) {
+        beginControlFlow("try")
+        block()
+        nextControlFlow("catch (e: %T)", CancellationException)
+        addStatement("throw e")
+        nextControlFlow("catch (e: %T)", ExceptionClassName)
+        emitResultStatement(errorStatement(errorCode, "e.message"), onMain = true)
+        endControlFlow()
+    }
+
     fun invokeUnitMethodStatement() {
         addStatement(
             "%N.%L(%L)",
@@ -71,7 +101,7 @@ internal fun CodeBlock.Builder.addMethodCodeBlock(
         )
     }
 
-    fun invokeMethodStatement() {
+    fun invokeMethodStatement(onMain: Boolean) {
         addStatement(
             "val resultData = %N.%L(%L)",
             wrappedModuleVarName,
@@ -88,11 +118,11 @@ internal fun CodeBlock.Builder.addMethodCodeBlock(
             "serializedResultData",
             "json"
         )
-        addStatement(resultStatement("serializedResultData"))
+        emitResultStatement(resultStatement("serializedResultData"), onMain)
     }
 
-    fun unitResultSuccessStatement() {
-        addStatement(resultStatement("null"))
+    fun unitResultSuccessStatement(onMain: Boolean) {
+        emitResultStatement(resultStatement("null"), onMain)
     }
 
     if (method.returnsUnit()) {
@@ -104,8 +134,10 @@ internal fun CodeBlock.Builder.addMethodCodeBlock(
             // }
             //
             withCoroutineScopeControlFlow {
-                invokeUnitMethodStatement()
-                unitResultSuccessStatement()
+                withErrorHandling("method_error") {
+                    invokeUnitMethodStatement()
+                    unitResultSuccessStatement(onMain = true)
+                }
             }
 
         } else {
@@ -114,7 +146,7 @@ internal fun CodeBlock.Builder.addMethodCodeBlock(
             // result.success(null)
             //
             invokeUnitMethodStatement()
-            unitResultSuccessStatement()
+            unitResultSuccessStatement(onMain = false)
         }
     } else {
         if (method.modifiers.contains(Modifier.SUSPEND)) {
@@ -124,13 +156,15 @@ internal fun CodeBlock.Builder.addMethodCodeBlock(
             // }
             //
             withCoroutineScopeControlFlow {
-                invokeMethodStatement()
+                withErrorHandling("method_error") {
+                    invokeMethodStatement(onMain = true)
+                }
             }
         } else {
             //
             // result.success(wrappedModule.method())
             //
-            invokeMethodStatement()
+            invokeMethodStatement(onMain = false)
         }
     }
 
@@ -162,6 +196,7 @@ internal fun CodeBlock.Builder.addStateFlowCodeBlock(
     moduleName: String,
     wrappedModuleVarName: String,
     resultStatement: (resultParameter: String) -> String = { "result.success($it)" },
+    errorStatement: (errorCode: String, messageExpr: String) -> String = { code, msg -> "result.error(\"$code\", $msg, null)" },
     append: CodeBlock.Builder.() -> Unit = {},
 ) {
     val flowTypeArgument = stateFlow.getStateFlowDeclarationFlowTypeArgument()
@@ -211,6 +246,8 @@ internal fun CodeBlock.Builder.addStateFlowCodeBlock(
         launch,
     )
 
+    beginControlFlow("try")
+
     if (flowTypeArgument.declaration.requiresSerialization()) {
         addStatement("val json = %T { encodeDefaults = true }", JsonClassName)
     }
@@ -255,7 +292,18 @@ internal fun CodeBlock.Builder.addStateFlowCodeBlock(
         "serializedNext",
         "json"
     )
+    // result must be delivered on the platform (main) thread; we are on Dispatchers.Default here.
+    beginControlFlow("%M(%T.Main)", withContext, Dispatchers)
     addStatement(resultStatement("serializedNext"))
+    endControlFlow()
+
+    nextControlFlow("catch (e: %T)", CancellationException)
+    addStatement("throw e")
+    nextControlFlow("catch (e: %T)", ExceptionClassName)
+    beginControlFlow("%M(%T.Main)", withContext, Dispatchers)
+    addStatement(errorStatement("flow_error", "e.message"))
+    endControlFlow()
+    endControlFlow()
 
     endControlFlow()
 
@@ -363,7 +411,12 @@ internal val LocalTime = ClassName("kotlinx.datetime", "LocalTime")
 internal val LocalDateTime = ClassName("kotlinx.datetime", "LocalDateTime")
 internal val Dispatchers = ClassName("kotlinx.coroutines", "Dispatchers")
 internal val launch = MemberName("kotlinx.coroutines", "launch")
+internal val withContext = MemberName("kotlinx.coroutines", "withContext")
 internal val CoroutineScope = ClassName("kotlinx.coroutines", "CoroutineScope")
+internal val CancellationException = ClassName("kotlinx.coroutines", "CancellationException")
+// Catch Exception, NOT Throwable: Errors (OutOfMemoryError, StackOverflowError, etc.) are
+// semi-unrecoverable and must be allowed to propagate (crash) rather than be reported to Flutter.
+internal val ExceptionClassName = ClassName("kotlin", "Exception")
 internal val ListOfMember = MemberName("kotlin.collections", "listOf")
 internal val JsonClassName = ClassName("kotlinx.serialization.json", "Json")
 internal val encodeToString = MemberName("kotlinx.serialization", "encodeToString")

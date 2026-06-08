@@ -19,7 +19,10 @@ final Stream<bool> boolEvents = const EventChannel('MyTestModule_boolEvents')
 final Stream<MyDataClass> dataClassEvents = const EventChannel('MyTestModule_dataClassEvents')
     .receiveBroadcastStream()
     .map((event) => MyDataClass.fromJson(jsonDecode(event) as Map<String, dynamic>));
-          StreamSubscription<int?> intState(Function(int?) onData) {
+final Stream<int> failingEvents = const EventChannel('MyTestModule_failingEvents')
+    .receiveBroadcastStream()
+    .map((event) => jsonDecode(event) as int);
+          StreamSubscription<int?> intState(Function(int?) onData, {void Function(Object error)? onError, void Function()? onDone}) {
     final streamController = StreamController<int?>();
     
 
@@ -45,16 +48,20 @@ final Stream<MyDataClass> dataClassEvents = const EventChannel('MyTestModule_dat
             } catch (e) {
                 if (!streamController.isClosed) {
                     streamController.addError(e);
+                    // Stop polling after an error: re-invoking next() would just rethrow the
+                    // same failure in a tight loop. Closing ends the subscription (and fires
+                    // onDone). Consumers can re-subscribe to retry.
+                    await streamController.close();
                 }
             }
         }
     }
-    
+
     streamController.onListen = startEmittingValues;
-    
-    return streamController.stream.listen(onData);
+
+    return streamController.stream.listen(onData, onError: onError, onDone: onDone);
 }
-        StreamSubscription<MyDataClass?> dataClassState(Function(MyDataClass?) onData) {
+        StreamSubscription<MyDataClass?> dataClassState(Function(MyDataClass?) onData, {void Function(Object error)? onError, void Function()? onDone}) {
     final streamController = StreamController<MyDataClass?>();
     
 
@@ -80,16 +87,20 @@ final Stream<MyDataClass> dataClassEvents = const EventChannel('MyTestModule_dat
             } catch (e) {
                 if (!streamController.isClosed) {
                     streamController.addError(e);
+                    // Stop polling after an error: re-invoking next() would just rethrow the
+                    // same failure in a tight loop. Closing ends the subscription (and fires
+                    // onDone). Consumers can re-subscribe to retry.
+                    await streamController.close();
                 }
             }
         }
     }
-    
+
     streamController.onListen = startEmittingValues;
-    
-    return streamController.stream.listen(onData);
+
+    return streamController.stream.listen(onData, onError: onError, onDone: onDone);
 }
-        StreamSubscription<MyDataClass?> parameterizedDataClassState(MyDataClass data, Function(MyDataClass?) onData) {
+        StreamSubscription<MyDataClass?> parameterizedDataClassState(MyDataClass data, Function(MyDataClass?) onData, {void Function(Object error)? onError, void Function()? onDone}) {
     final streamController = StreamController<MyDataClass?>();
     final dataSerialized = jsonEncode(data.toJson());
 
@@ -115,16 +126,20 @@ final Stream<MyDataClass> dataClassEvents = const EventChannel('MyTestModule_dat
             } catch (e) {
                 if (!streamController.isClosed) {
                     streamController.addError(e);
+                    // Stop polling after an error: re-invoking next() would just rethrow the
+                    // same failure in a tight loop. Closing ends the subscription (and fires
+                    // onDone). Consumers can re-subscribe to retry.
+                    await streamController.close();
                 }
             }
         }
     }
-    
+
     streamController.onListen = startEmittingValues;
-    
-    return streamController.stream.listen(onData);
+
+    return streamController.stream.listen(onData, onError: onError, onDone: onDone);
 }
-        StreamSubscription<bool?> boolState(Function(bool?) onData) {
+        StreamSubscription<bool?> boolState(Function(bool?) onData, {void Function(Object error)? onError, void Function()? onDone}) {
     final streamController = StreamController<bool?>();
     
 
@@ -150,16 +165,20 @@ final Stream<MyDataClass> dataClassEvents = const EventChannel('MyTestModule_dat
             } catch (e) {
                 if (!streamController.isClosed) {
                     streamController.addError(e);
+                    // Stop polling after an error: re-invoking next() would just rethrow the
+                    // same failure in a tight loop. Closing ends the subscription (and fires
+                    // onDone). Consumers can re-subscribe to retry.
+                    await streamController.close();
                 }
             }
         }
     }
-    
+
     streamController.onListen = startEmittingValues;
-    
-    return streamController.stream.listen(onData);
+
+    return streamController.stream.listen(onData, onError: onError, onDone: onDone);
 }
-        StreamSubscription<int?> intStateAdd(int num, Function(int?) onData) {
+        StreamSubscription<int?> intStateAdd(int num, Function(int?) onData, {void Function(Object error)? onError, void Function()? onDone}) {
     final streamController = StreamController<int?>();
     
 
@@ -185,14 +204,57 @@ final Stream<MyDataClass> dataClassEvents = const EventChannel('MyTestModule_dat
             } catch (e) {
                 if (!streamController.isClosed) {
                     streamController.addError(e);
+                    // Stop polling after an error: re-invoking next() would just rethrow the
+                    // same failure in a tight loop. Closing ends the subscription (and fires
+                    // onDone). Consumers can re-subscribe to retry.
+                    await streamController.close();
                 }
             }
         }
     }
-    
+
     streamController.onListen = startEmittingValues;
+
+    return streamController.stream.listen(onData, onError: onError, onDone: onDone);
+}
+        StreamSubscription<int?> failingState(Function(int?) onData, {void Function(Object error)? onError, void Function()? onDone}) {
+    final streamController = StreamController<int?>();
     
-    return streamController.stream.listen(onData);
+
+    Future<int?> next(int? previous) async {
+    return await methodChannelToNative.invokeMethod<int>(
+            'MyTestModule_failingState',
+            [previous]
+        );
+    }
+    
+    void startEmittingValues() async {
+        int? currentValue;
+        while (!streamController.isClosed) {
+            try {
+                currentValue = await next(currentValue);
+                if (!streamController.isClosed) {
+                    if (currentValue == null) {
+                        streamController.add(null);
+                    } else {
+                        streamController.add(currentValue);
+                    }
+                }
+            } catch (e) {
+                if (!streamController.isClosed) {
+                    streamController.addError(e);
+                    // Stop polling after an error: re-invoking next() would just rethrow the
+                    // same failure in a tight loop. Closing ends the subscription (and fires
+                    // onDone). Consumers can re-subscribe to retry.
+                    await streamController.close();
+                }
+            }
+        }
+    }
+
+    streamController.onListen = startEmittingValues;
+
+    return streamController.stream.listen(onData, onError: onError, onDone: onDone);
 }
   Future<void> unitMethod() async {
     
@@ -710,6 +772,21 @@ Future<String> suspendStringMethod() async {
 
     if (invokeResult == null) {
         throw PlatformException(code: '1', message: 'Method suspendStringMethod failed');
+    }
+
+    final result = invokeResult;
+
+    return result;
+}
+Future<String> failingSuspendMethod() async {
+    
+    final invokeResult = await methodChannelToNative.invokeMethod<String>(
+        'MyTestModule_failingSuspendMethod',
+        [],
+    );
+
+    if (invokeResult == null) {
+        throw PlatformException(code: '1', message: 'Method failingSuspendMethod failed');
     }
 
     final result = invokeResult;

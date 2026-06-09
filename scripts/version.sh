@@ -13,6 +13,6 @@ BASEDIR="$(cd "$(dirname "$0")/.." && pwd)"
     perl -i -pe "s/^version=.*/version=${VERSION}/" example/gradle.properties
     perl -i -pe "s/^## unreleased\$/## unreleased\n## ${GIT_TAG}/" CHANGELOG.md
     perl -i -pe "s/val flutterKmpVersion = .*/val flutterKmpVersion = \"${VERSION}\"/" example/build.gradle.kts
-    git commit -m "version ${VERSION}" gradle.properties CHANGELOG.md example/build.gradle.kts
+    git commit -m "version ${VERSION}" gradle.properties example/gradle.properties CHANGELOG.md example/build.gradle.kts
     git tag -a "$GIT_TAG" -m "version ${VERSION}"
 )

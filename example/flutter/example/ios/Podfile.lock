@@ -4,14 +4,11 @@ PODS:
     - Flutter
     - FlutterKmpExample
   - FlutterKmpExample (0.1.0)
-  - integration_test (0.0.1):
-    - Flutter
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
   - flutter_kmp_example (from `.symlinks/plugins/flutter_kmp_example/ios`)
   - FlutterKmpExample (from `../../../FlutterKmpExample.podspec`)
-  - integration_test (from `.symlinks/plugins/integration_test/ios`)
 
 EXTERNAL SOURCES:
   Flutter:
@@ -20,15 +17,12 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/flutter_kmp_example/ios"
   FlutterKmpExample:
     :path: "../../../FlutterKmpExample.podspec"
-  integration_test:
-    :path: ".symlinks/plugins/integration_test/ios"
 
 SPEC CHECKSUMS:
-  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_kmp_example: cef86282548c3343df655b50da93fb23981c5cfd
   FlutterKmpExample: 353b38380378eaf5b71cee500a84dae03fa23f7d
-  integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
 
-PODFILE CHECKSUM: 53af147c3b0053711becea2df6d246d410fe58ba
+PODFILE CHECKSUM: 32d220c9c013f573c33d6e7ad07fe4c8480369ba
 
 COCOAPODS: 1.16.2

@@ -1,7 +1,7 @@
 [versions]
-kotlin = "2.0.21"
-kotlin-coroutines = "1.9.0"
-ksp = "2.0.21-1.0.25"
+kotlin = "2.3.20"
+kotlin-coroutines = "1.11.0"
+ksp = "2.3.9"
 kotlinpoet = "1.18.1"
 swiftpoet = "1.6.5"
 
@@ -14,7 +14,7 @@ kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-c
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlin-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlin-coroutines" }
 
-kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.6.3" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.11.0" }
 
 kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
 kotlinpoet-metadata = { module = "com.squareup:kotlinpoet-metadata", version.ref = "kotlinpoet" }
@@ -26,7 +26,7 @@ google-auto-service = { module = "com.google.auto.service:auto-service", version
 
 ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 
-gradle-plugin-android = { module = "com.android.tools.build:gradle", version = "8.1.4" }
+gradle-plugin-android = { module = "com.android.tools.build:gradle", version = "8.11.1" }
 gradle-plugin-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 gradle-plugin-kotlin-serialization = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
 

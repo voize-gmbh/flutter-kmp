@@ -1,13 +1,18 @@
 #!/bin/bash
+set -euo pipefail
 
 VERSION=${1}
 GIT_TAG=v${VERSION}
-BASEDIR=$(dirname $(readlink -f "$0"))
+# Portable BASEDIR resolution (BSD readlink has no -f).
+BASEDIR="$(cd "$(dirname "$0")/.." && pwd)"
 (
-    cd "$BASEDIR/.."
-    sed -i "s/version=.*/version=${VERSION}/g" gradle.properties
-    sed -i "/\#\# unreleased/a \#\# ${GIT_TAG}" CHANGELOG.md
-    sed -i "s/val flutterKmpVersion = .*/val flutterKmpVersion = \"${VERSION}\"/g" example/build.gradle.kts
+    cd "$BASEDIR"
+    # Use perl for in-place edits: identical behaviour on BSD (macOS) and GNU (Linux/CI),
+    # unlike `sed -i` whose syntax differs between the two.
+    perl -i -pe "s/^version=.*/version=${VERSION}/" gradle.properties
+    perl -i -pe "s/^version=.*/version=${VERSION}/" example/gradle.properties
+    perl -i -pe "s/^## unreleased\$/## unreleased\n## ${GIT_TAG}/" CHANGELOG.md
+    perl -i -pe "s/val flutterKmpVersion = .*/val flutterKmpVersion = \"${VERSION}\"/" example/build.gradle.kts
     git commit -m "version ${VERSION}" gradle.properties CHANGELOG.md example/build.gradle.kts
-    git tag -a $GIT_TAG -m "version ${VERSION}"
+    git tag -a "$GIT_TAG" -m "version ${VERSION}"
 )

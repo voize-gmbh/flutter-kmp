@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("multiplatform")
@@ -8,7 +9,7 @@ plugins {
 
 android {
     namespace = "de.voize.flutterkmp"
-    compileSdk = 33
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 21
@@ -25,8 +26,8 @@ kotlin {
 
     jvm()
     androidTarget {
-        compilations.all {
-            kotlinOptions.jvmTarget = "1.8"
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_1_8)
         }
         publishLibraryVariants("release")
     }
@@ -61,17 +62,19 @@ kotlin {
             }
         }
 
+        iosTest {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
+
         all {
             languageSettings.optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
             languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
         }
     }
-    targets.all {
-        compilations.all {
-            kotlinOptions {
-                freeCompilerArgs += listOf("-Xexpect-actual-classes")
-            }
-        }
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
     }
 }
 

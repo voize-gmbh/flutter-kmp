@@ -16,8 +16,14 @@ public class FlutterKmpExamplePlugin: NSObject, FlutterPlugin {
     let createMethodChannel = { (name: String, binaryMessenger: NSObject) in
       FlutterMethodChannel(name: name, binaryMessenger: binaryMessenger as! FlutterBinaryMessenger)
     }
-    let createEventChannel = { (name: String, binaryMessenger: NSObject) in
-      FlutterEventChannel(name: name, binaryMessenger: binaryMessenger as! FlutterBinaryMessenger)
+    let setUpEventChannel = { (name: String, binaryMessenger: NSObject, handler: NSObject) in
+      let eventChannel = FlutterEventChannel(name: name, binaryMessenger: binaryMessenger as! FlutterBinaryMessenger)
+      // Fail loud if the handler does not conform: a silent nil cast here would leave the
+      // event channel without a stream handler (events would never reach Dart, with no error).
+      guard let streamHandler = handler as? (any FlutterStreamHandler & NSObjectProtocol) else {
+        fatalError("setUpEventChannel: stream handler does not conform to FlutterStreamHandler & NSObjectProtocol (got \(type(of: handler)))")
+      }
+      eventChannel.setStreamHandler(streamHandler)
     }
     let createFlutterError = { (code: String, message: String?, details: Any?) in
       FlutterError(code: code, message: message, details: details)
@@ -34,7 +40,7 @@ public class FlutterKmpExamplePlugin: NSObject, FlutterPlugin {
       registrar: registrar,
       pluginInstance: instance,
       createMethodChannel: createMethodChannel,
-      createEventChannel: createEventChannel,
+      setUpEventChannel: setUpEventChannel,
       createFlutterError: createFlutterError
     )
 
@@ -42,7 +48,7 @@ public class FlutterKmpExamplePlugin: NSObject, FlutterPlugin {
       registrar: registrar,
       pluginInstance: instance,
       createMethodChannel: createMethodChannel,
-      createEventChannel: createEventChannel,
+      setUpEventChannel: setUpEventChannel,
       createFlutterError: createFlutterError
     )
   }

@@ -2,7 +2,17 @@ package de.voize.flutterkmp.ksp.processor
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSDeclaration
+import com.google.devtools.ksp.symbol.KSFile
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeAlias
+import com.google.devtools.ksp.symbol.KSTypeParameter
+import com.google.devtools.ksp.symbol.Modifier
+import com.google.devtools.ksp.symbol.Origin
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -174,7 +184,16 @@ fun KSDeclaration.requiresSerialization(): Boolean {
 
     return qualifiedName?.asString() in types
            || (this is KSClassDeclaration && when (this.classKind) {
-               ClassKind.CLASS -> this.origin == Origin.KOTLIN
+        // For compiled dependencies (Origin.KOTLIN_LIB) ONLY data/sealed classes are
+        // serializable models. Plain stdlib classes like kotlin.String / kotlin.Int are also
+        // KOTLIN_LIB, so we must NOT mark them as requiring serialization — otherwise the
+        // native side tries to JSON-decode a raw (unquoted) value (e.g. `test`) and aborts
+        // at runtime. This mirrors the KOTLIN_LIB handling in filterTypesForGeneration().
+        ClassKind.CLASS -> when (this.origin) {
+            Origin.KOTLIN -> true
+            Origin.KOTLIN_LIB -> Modifier.DATA in this.modifiers || Modifier.SEALED in this.modifiers
+            else -> false
+        }
                ClassKind.OBJECT -> true
                ClassKind.ENUM_CLASS -> true
                else -> false
@@ -205,12 +224,29 @@ fun filterTypesForGeneration(types: Set<KSDeclaration>): Collection<KSDeclaratio
             "kotlinx.datetime.LocalDateTime",
             "kotlinx.datetime.LocalTime",
         )
-        it.qualifiedName?.asString() !in defaultTypes
+        it.qualifiedName != null && it.qualifiedName?.asString() !in defaultTypes
     }
 
     return customTypes.filter {
         when (it) {
-            is KSClassDeclaration -> it.classKind != ClassKind.INTERFACE && it.origin == Origin.KOTLIN
+            is KSClassDeclaration ->
+                when (it.origin) {
+                    // KOTLIN (same-module sources): accept anything that is not an interface —
+                    // same behaviour as before the KOTLIN_LIB extension.
+                    Origin.KOTLIN -> it.classKind != ClassKind.INTERFACE
+                    // KOTLIN_LIB (compiled dependency): only accept the exact class kinds that
+                    // toDartType() can handle. This prevents stdlib base classes like kotlin.Enum,
+                    // kotlin.Comparable, etc. — which appear via superType traversal in
+                    // findAllUsedTypes — from leaking through and crashing code generation.
+                    Origin.KOTLIN_LIB -> when (it.classKind) {
+                        ClassKind.CLASS -> Modifier.DATA in it.modifiers || Modifier.SEALED in it.modifiers
+                        ClassKind.ENUM_CLASS -> true
+                        ClassKind.OBJECT -> true
+                        else -> false
+                    }
+
+                    else -> false
+                }
             is KSTypeParameter -> false
             else -> true
         }

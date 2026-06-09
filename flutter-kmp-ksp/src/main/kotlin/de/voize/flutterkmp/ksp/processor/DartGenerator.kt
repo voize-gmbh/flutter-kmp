@@ -71,6 +71,7 @@ final Stream<${flowTypeArgument.toTypeName()}> $propertyName = const EventChanne
      *         } catch (e) {
      *           if (!streamController.isClosed) {
      *             streamController.addError(e);
+     *             await streamController.close();
      *           }
      *         }
      *       }
@@ -98,7 +99,10 @@ final Stream<${flowTypeArgument.toTypeName()}> $propertyName = const EventChanne
 
         val parameterStrings = dartParameters.map { (name, dartType) ->
             "${dartType.toTypeName()} $name"
-        } + listOf("Function(${flowTypeArgument.nullable().toTypeName()}) onData")
+        } + listOf(
+            "Function(${flowTypeArgument.nullable().toTypeName()}) onData",
+            "{void Function(Object error)? onError, void Function()? onDone}",
+        )
 
         val serializationStatements = dartParameters.mapNotNull { (name, dartType) ->
             dartType.getDartSerializationStatement(name)
@@ -143,14 +147,18 @@ final Stream<${flowTypeArgument.toTypeName()}> $propertyName = const EventChanne
             } catch (e) {
                 if (!streamController.isClosed) {
                     streamController.addError(e);
+                    // Stop polling after an error: re-invoking next() would just rethrow the
+                    // same failure in a tight loop. Closing ends the subscription (and fires
+                    // onDone). Consumers can re-subscribe to retry.
+                    await streamController.close();
                 }
             }
         }
     }
-    
+
     streamController.onListen = startEmittingValues;
-    
-    return streamController.stream.listen(onData);
+
+    return streamController.stream.listen(onData, onError: onError, onDone: onDone);
 }
 """.trimIndent()
     }

@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## unreleased
+## v0.2.0
 
 ### Added — types from compiled dependencies (`KOTLIN_LIB`)
 - Support Kotlin types coming from compiled dependencies (KSP `Origin.KOTLIN_LIB`), so models from a depended-on module (via `api`/`implementation`) work across the interop boundary:

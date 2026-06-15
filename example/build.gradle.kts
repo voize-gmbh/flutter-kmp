@@ -8,7 +8,7 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
 }
 
-val flutterKmpVersion = "0.2.0"
+val flutterKmpVersion = "0.2.1"
 
 kotlin {
     jvm()

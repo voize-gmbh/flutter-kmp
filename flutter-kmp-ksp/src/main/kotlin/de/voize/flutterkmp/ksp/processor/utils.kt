@@ -219,6 +219,7 @@ fun filterTypesForGeneration(types: Set<KSDeclaration>): Collection<KSDeclaratio
             "kotlin.collections.Map",
             "kotlin.collections.Set",
             "kotlin.time.Duration",
+            "kotlin.time.Instant",
             "kotlinx.datetime.Instant",
             "kotlinx.datetime.LocalDate",
             "kotlinx.datetime.LocalDateTime",

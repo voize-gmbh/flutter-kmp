@@ -216,6 +216,7 @@ internal fun CodeBlock.Builder.addStateFlowCodeBlock(
     if (
         flowTypeArgument.declaration.requiresSerialization() ||
         listOf(
+            "kotlin.time.Instant",
             "kotlinx.datetime.Instant",
             "kotlinx.datetime.LocalDateTime",
             "kotlinx.datetime.LocalDate",
@@ -273,6 +274,7 @@ internal fun CodeBlock.Builder.addStateFlowCodeBlock(
         addStatement("%L.encodeToString(it) != previous", "json")
     } else if (
         listOf(
+            "kotlin.time.Instant",
             "kotlinx.datetime.Instant",
             "kotlinx.datetime.LocalDateTime",
             "kotlinx.datetime.LocalDate",
@@ -328,6 +330,7 @@ internal fun CodeBlock.Builder.getKotlinSerialization(
             varName,
         )
     } else when (declaration.qualifiedName?.asString()) {
+        "kotlin.time.Instant",
         "kotlinx.datetime.Instant",
         "kotlinx.datetime.LocalDateTime",
         "kotlinx.datetime.LocalTime",
@@ -347,6 +350,14 @@ internal fun CodeBlock.Builder.getKotlinDeserialization(type: KSType, varName: S
             varName,
         )
     } else when (type.declaration.qualifiedName?.asString()) {
+        "kotlin.time.Instant" -> {
+            addStatement(
+                "val %L = %T.parse(%L as String)",
+                assignTo,
+                KotlinTimeInstant,
+                varName,
+            )
+        }
         "kotlinx.datetime.Instant" -> {
             addStatement(
                 "val %L = %T.parse(%L as String)",
@@ -406,6 +417,7 @@ internal fun KSValueParameter.toParameterSpec(): ParameterSpec {
 
 internal val Duration = ClassName("kotlin.time", "Duration")
 internal val Instant = ClassName("kotlinx.datetime", "Instant")
+internal val KotlinTimeInstant = ClassName("kotlin.time", "Instant")
 internal val LocalDate = ClassName("kotlinx.datetime", "LocalDate")
 internal val LocalTime = ClassName("kotlinx.datetime", "LocalTime")
 internal val LocalDateTime = ClassName("kotlinx.datetime", "LocalDateTime")

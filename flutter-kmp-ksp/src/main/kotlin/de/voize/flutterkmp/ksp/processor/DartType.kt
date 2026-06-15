@@ -165,6 +165,7 @@ internal fun KSType.toDartType(): DartType {
             this.isMarkedNullable,
         )
         "kotlin.time.Duration" -> DartType.Duration(this.isMarkedNullable)
+        "kotlin.time.Instant",
         "kotlinx.datetime.Instant" -> DartType.DateTime(this.isMarkedNullable)
         "kotlinx.datetime.LocalDate" -> DartType.LocalDate(this.isMarkedNullable)
         "kotlinx.datetime.LocalDateTime" -> DartType.LocalDateTime(this.isMarkedNullable)
